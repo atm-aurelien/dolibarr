@@ -29,13 +29,14 @@
 
 require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
-require_once DOL_DOCUMENT_ROOT . '/core/lib/invoice.lib.php';
-require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
+require_once DOL_DOCUMENT_ROOT . '/core/lib/multidevises.lib.php';
+//require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
 
 $langs -> load("admin");
 $langs -> load("errors");
 $langs -> load('other');
 $langs -> load('bills');
+$langs -> load('multidevises');
 
 if (!$user -> admin)
 	accessforbidden();
@@ -45,3 +46,162 @@ $value = GETPOST('value', 'alpha');
 $label = GETPOST('label', 'alpha');
 $scandir = GETPOST('scandir', 'alpha');
 $type = 'multidevises';
+
+/*
+ * View
+ */
+ llxHeader('',$langs->trans("Multidevises"));
+
+$linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
+print_fiche_titre($langs->trans("MultiDevisesConfig"),$linkback,'title_setup');
+
+$head = multidevises_admin_prepare_head();
+
+if(isset($_REQUEST['api'])) $tab='api';
+if(isset($_REQUEST['main'])) $tab='general';
+
+/*
+ * Saving
+ */
+ if(isset($_REQUEST['MultiDevisesAPIURL'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_API_URL',$_REQUEST['MultiDevisesAPIURL'],'chaine',0,'',$conf->entity);
+ }
+ if(isset($_REQUEST['MultiDevisesBasePath'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_API_BASEPATH',$_REQUEST['MultiDevisesBasePath'],'chaine',0,'',$conf->entity);
+ }
+  if(isset($_REQUEST['MultiDevisesDatePath'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_API_DATEPATH',$_REQUEST['MultiDevisesDatePath'],'chaine',0,'',$conf->entity);
+ }
+ if(isset($_REQUEST['MultiDevisesRatesPath'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_API_RATESPATH',$_REQUEST['MultiDevisesRatesPath'],'chaine',0,'',$conf->entity);
+ }
+  if(isset($_REQUEST['MultidevisesRecupMode'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_API_MODE',$_REQUEST['MultidevisesRecupMode'],'chaine',0,'',$conf->entity);
+ }
+  if(isset($_REQUEST['MultidevisesRateHisto'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_RATE_HISTO',$_REQUEST['MultidevisesRateHisto'],'chaine',0,'',$conf->entity);
+ }
+ if(isset($_REQUEST['MultidevisesUpdateConv'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_UPDATE_CONV',$_REQUEST['MultidevisesUpdateConv'],'chaine',0,'',$conf->entity);
+ }
+  if(isset($_REQUEST['MultidevisesCalcRate'])) {
+ 	dolibarr_set_const($db,'MULTIDEVISES_CALC_RATE',$_REQUEST['MultidevisesCalcRate'],'chaine',0,'',$conf->entity);
+ }
+
+
+dol_fiche_head($head, $tab, $langs->trans("Multidevises"), 0, 'invoice');
+
+if(isset($_REQUEST['api'])) {
+?>
+<form method="post">
+	<table class="noborder">
+		<tr class="liste_titre">
+			<td colspan="2">
+				Configuration de l'API
+			</td>
+		</tr>
+		<tr class="impair">
+			<td>
+				URL d'appel d'API
+			</td>
+			<td>
+				<input type="text" name="MultiDevisesAPIURL" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_URL') ?>"/>
+			</td>
+		</tr>
+		<tr class="pair">
+			<td>
+				Mode de récupération
+			</td>
+			<td>
+				<select name="MultidevisesRecupMode">
+					<option value="XML"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_MODE')=='XML' ? ' selected="selected"' : '' ?>>XML</option>
+					<option value="JSON"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_MODE')=='JSON' ? ' selected="selected"' : '' ?>>JSON</option>
+				</select>
+			</td>
+		</tr>
+		<tr class="impair">
+			<td>
+				Chemin devise de base
+			</td>
+			<td>
+				<input type="text" name="MultiDevisesBasePath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_BASEPATH') ?>"/>
+			</td>
+		</tr>
+		<tr class="pair">
+			<td>
+				Chemin date de valeur
+			</td>
+			<td>
+				<input type="text" name="MultiDevisesDatePath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_DATEPATH') ?>"/>
+			</td>
+		</tr>
+		<tr class="impair">
+			<td>
+				Chemin ratios
+			</td>
+			<td>
+				<input type="text" name="MultiDevisesRatesPath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_RATESPATH') ?>"/>
+			</td>
+		</tr>
+	</table>
+	<input type="submit" value="Enregistrer"/>
+</form>
+<?php
+}
+
+if(isset($_REQUEST['main'])) {
+?>
+<form method="post" id="formMain">
+	<table class="noborder">
+		<tr class="liste_titre">
+			<td colspan="2">
+				Taux
+			</td>
+		</tr>
+		<tr class="pair">
+			<td>
+				Conserver l'historique des taux sur
+			</td>
+			<td>
+				<select name="MultidevisesRateHisto" onchange="$('#formMain').submit();">
+					<option value="0"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO')=='0' ? ' selected="selected"' : '' ?>>jamais</option>
+					<option value="1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO')=='1' ? ' selected="selected"' : '' ?>>1 mois</option>
+					<option value="6"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO')=='6' ? ' selected="selected"' : '' ?>>6 mois</option>
+					<option value="12"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO')=='12' ? ' selected="selected"' : '' ?>>1 an</option>
+					<option value="-1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO')=='-1' ? ' selected="selected"' : '' ?>>Infini</option>
+				</select>
+			</td>
+		</tr>
+		<tr class="impair">
+			<td>
+				Autoriser la mise à jour du taux lors de la conversion d'une propale en commande 
+			</td>
+			<td>
+				<input type="hidden" name="MultidevisesUpdateConv" id="MultiDevisesUpdateConv" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_UPDATE_CONV') ?>"/>
+				<?php if(dolibarr_get_const($db, 'MULTIDEVISES_UPDATE_CONV')=='1') { ?>
+				<a href="#" onclick="$('#MultiDevisesUpdateConv').val(0);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_on'); ?></a>
+				<?php } else {?>
+				<a href="#" onclick="$('#MultiDevisesUpdateConv').val(1);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_off'); ?></a>
+				<?php } ?>
+			</td>
+		</tr>
+		<tr class="pair">
+			<td>
+				Calculer le taux à la volée (ne pas stocker la valeur convertie en base)
+			</td>
+			<td>
+				<input type="hidden" name="MultidevisesCalcRate" id="MultidevisesCalcRate" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_CALC_RATE') ?>"/>
+				<?php if(dolibarr_get_const($db, 'MULTIDEVISES_CALC_RATE')=='1') { ?>
+				<a href="#" onclick="$('#MultidevisesCalcRate').val(0);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_on'); ?></a>
+				<?php } else {?>
+				<a href="#" onclick="$('#MultidevisesCalcRate').val(1);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_off'); ?></a>
+				<?php } ?>
+			</td>
+		</tr>
+
+	</table>
+</form>
+<?php
+}
+
+llxFooter();
