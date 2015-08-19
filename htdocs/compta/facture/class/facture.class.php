@@ -158,7 +158,14 @@ class Facture extends CommonInvoice
 	 * @var bool Final situation flag
 	 */
 	public $situation_final;
+	
+	/*
+	 * Devise n°2 + taux de la facture (optionnel) 
+	 */
 
+	 public $second_currency;
+	 public $second_currency_rate;
+	 
     /**
      * Standard invoice
      */

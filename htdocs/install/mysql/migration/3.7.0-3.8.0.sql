@@ -149,12 +149,16 @@ CREATE TABLE llx_printing
 
 ALTER TABLE llx_product_fournisseur_price ADD COLUMN fk_price_expression integer DEFAULT NULL;
 
+ALTER TABLE llx_c_currencies ADD COLUMN current_rate DOUBLE DEFAULT 0;
+
 -- Add situation invoices
 ALTER TABLE llx_facture ADD COLUMN situation_cycle_ref smallint;
 ALTER TABLE llx_facture ADD COLUMN situation_counter smallint;
 ALTER TABLE llx_facture ADD COLUMN situation_final smallint;
 ALTER TABLE llx_facturedet ADD COLUMN situation_percent real;
 ALTER TABLE llx_facturedet ADD COLUMN fk_prev_id integer;
+ALTER TABLE llx_facture ADD COLUMN second_currency varchar(3) NULL;
+ALTER TABLE llx_facture ADD COLUMN second_currency_rate double;
 
 -- Convert SMTP config to main entity, so new entities don't get the old values
 UPDATE llx_const SET entity = __ENCRYPT('1')__ WHERE __DECRYPT('entity')__ = 0 AND __DECRYPT('name')__ = "MAIN_MAIL_SENDMODE";
@@ -792,3 +796,112 @@ DELETE FROM llx_c_regions WHERE code_region=420 and fk_pays=4;
 ALTER TABLE llx_c_paiement MODIFY COLUMN libelle varchar(62);
 
 ALTER TABLE llx_societe_remise_except MODIFY COLUMN description text NOT NULL;
+ALTER TABLE llx_societe ADD COLUMN currency varchar(3);
+
+
+
+-- phpMyAdmin SQL Dump
+-- version 4.2.12deb2
+-- http://www.phpmyadmin.net
+--
+-- Client :  localhost
+-- Généré le :  Mer 19 Août 2015 à 17:14
+-- Version du serveur :  5.6.25-0ubuntu0.15.04.1
+-- Version de PHP :  5.6.4-4ubuntu6.2
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+
+--
+-- Base de données :  `dolibarr_dev`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `llx_document_currency`
+--
+
+CREATE TABLE IF NOT EXISTS `llx_document_currency` (
+`rowid` int(11) NOT NULL,
+  `element_type` varchar(25) NOT NULL,
+  `element_id` int(11) NOT NULL,
+  `currency` varchar(3) NOT NULL,
+  `rate` double NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Index pour les tables exportées
+--
+
+--
+-- Index pour la table `llx_document_currency`
+--
+ALTER TABLE `llx_devise_document`
+ ADD PRIMARY KEY (`rowid`);
+
+--
+-- AUTO_INCREMENT pour les tables exportées
+--
+
+--
+-- AUTO_INCREMENT pour la table `llx_document_currency`
+--
+ALTER TABLE `llx_devise_document`
+MODIFY `rowid` int(11) NOT NULL AUTO_INCREMENT;
+
+
+
+
+
+
+
+-- phpMyAdmin SQL Dump
+-- version 4.2.12deb2
+-- http://www.phpmyadmin.net
+--
+-- Client :  localhost
+-- Généré le :  Mer 19 Août 2015 à 17:15
+-- Version du serveur :  5.6.25-0ubuntu0.15.04.1
+-- Version de PHP :  5.6.4-4ubuntu6.2
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+
+--
+-- Base de données :  `dolibarr_dev`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `llx_document_currency_line`
+--
+
+CREATE TABLE IF NOT EXISTS `llx_document_currency_line` (
+`rowid` int(11) NOT NULL,
+  `element_type` varchar(25) NOT NULL,
+  `element_id` int(11) NOT NULL,
+  `pu_ht` double NOT NULL,
+  `montant_ht` double NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Index pour les tables exportées
+--
+
+--
+-- Index pour la table `llx_document_currency_line`
+--
+ALTER TABLE `llx_currency_document_line`
+ ADD PRIMARY KEY (`rowid`);
+
+--
+-- AUTO_INCREMENT pour les tables exportées
+--
+
+--
+-- AUTO_INCREMENT pour la table `llx_document_currency_line`
+--
+ALTER TABLE `llx_currency_document_line`
+MODIFY `rowid` int(11) NOT NULL AUTO_INCREMENT;
