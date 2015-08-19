@@ -48,6 +48,8 @@ $langs->load("commercial");
 $langs->load("bills");
 $langs->load("banks");
 $langs->load("users");
+$langs->load("dict");
+
 if (!empty($conf->incoterm->enabled)) $langs->load("incoterm");
 if (! empty($conf->notification->enabled)) $langs->load("mails");
 
@@ -296,6 +298,16 @@ if (empty($reshook))
         // Webservices url/key
         $object->webservices_url       = GETPOST('webservices_url', 'custom', 0, FILTER_SANITIZE_URL);
         $object->webservices_key       = GETPOST('webservices_key', 'san_alpha');
+		
+		
+		if (!empty($conf->multidevises->enabled))
+		{
+			$object->currency       	   = GETPOST('currency', 'alpha');
+		}
+		else {
+			$object->currency = '';
+		}
+
 
 		// Incoterms
 		if (!empty($conf->incoterm->enabled))
@@ -1075,6 +1087,12 @@ else
         print $form->select_country((GETPOST('country_id')!=''?GETPOST('country_id'):$object->country_id));
         if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"),1);
         print '</td></tr>';
+		
+		if($conf->multidevises->enabled) {
+				print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
+	            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
+	            print '</td></tr>';
+			}
 
         // State
         if (empty($conf->global->SOCIETE_DISABLE_STATE))
@@ -1368,6 +1386,14 @@ else
                 $object->tva_assuj				= GETPOST('assujtva_value', 'int');
                 $object->tva_intra				= GETPOST('tva_intra', 'alpha');
                 $object->status					= GETPOST('status', 'int');
+				
+				if (!empty($conf->multidevises->enabled)) {
+					$object->currency				= GETPOST('currency', 'alpha');	
+				}
+				else {
+					$object->currency=null;
+				}
+				
 
                 // Webservices url/key
                 $object->webservices_url        = GETPOST('webservices_url', 'custom', 0, FILTER_SANITIZE_URL);
@@ -1593,6 +1619,12 @@ else
             print $form->select_country((GETPOST('country_id')!=''?GETPOST('country_id'):$object->country_id),'country_id');
             if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"),1);
             print '</td></tr>';
+			
+			if($conf->multidevises->enabled) {
+				print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
+	            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
+	            print '</td></tr>';
+			}
 
             // State
             if (empty($conf->global->SOCIETE_DISABLE_STATE))
@@ -1987,6 +2019,14 @@ else
            	else print ($img?$img.' ':'').$object->country;
     	}
         print '</td></tr>';
+		
+		if($conf->multidevises->enabled) {
+			 print '<tr><td width="25%">'.$langs->trans("Devise").'</td><td colspan="'.(2+(($showlogo || $showbarcode)?0:1)).'">';
+	        print currency_name($object->currency ? $object->currency : $conf->currency,1);
+			print ' ('.$langs->getCurrencySymbol($object->currency ? $object->currency : $conf->currency).')';
+	        print '</td>';
+	        print '</tr>';
+		}
 
         // State
         if (empty($conf->global->SOCIETE_DISABLE_STATE)) print '<tr><td>'.$langs->trans('State').'</td><td colspan="'.(2+(($showlogo || $showbarcode)?0:1)).'">'.$object->state.'</td>';

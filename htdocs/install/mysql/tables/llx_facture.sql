@@ -85,4 +85,5 @@ create table llx_facture
   situation_counter   smallint,  -- situation counter
   situation_final     smallint   -- is the situation final ?
 
+
 )ENGINE=innodb;

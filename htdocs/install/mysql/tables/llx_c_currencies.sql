@@ -22,7 +22,9 @@ create table llx_c_currencies
   code_iso		varchar(3)  PRIMARY KEY,
   label			varchar(64) NOT NULL,
   unicode		varchar(32) DEFAULT NULL,
-  active		tinyint		DEFAULT 1  NOT NULL
+  active		tinyint		DEFAULT 1  NOT NULL,
+  
+  current_rate	double(10,5)
   
 )ENGINE=innodb;
 

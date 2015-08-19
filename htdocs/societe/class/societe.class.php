@@ -391,6 +391,9 @@ class Societe extends CommonObject
      */
     var $oldcopy;
 
+	// currency
+	var $currency;
+
     /**
      *    Constructor
      *
@@ -771,6 +774,7 @@ class Societe extends CommonObject
         //Incoterms
         $this->fk_incoterms = (int) $this->fk_incoterms;
 		$this->location_incoterms = trim($this->location_incoterms);
+		
 
         $this->db->begin();
 
@@ -872,6 +876,8 @@ class Societe extends CommonObject
                 $sql .= ", code_compta_fournisseur = ".(! empty($this->code_compta_fournisseur)?"'".$this->db->escape($this->code_compta_fournisseur)."'":"null");
             }
             $sql .= ", fk_user_modif = ".(! empty($user->id)?"'".$user->id."'":"null");
+			$sql .= ", currency = '".$this->currency . "'";
+			
             $sql .= " WHERE rowid = '" . $id ."'";
 
 
@@ -1022,7 +1028,7 @@ class Societe extends CommonObject
         $sql .= ', s.code_client, s.code_fournisseur, s.code_compta, s.code_compta_fournisseur, s.parent, s.barcode';
         $sql .= ', s.fk_departement, s.fk_pays as country_id, s.fk_stcomm, s.remise_client, s.mode_reglement, s.cond_reglement, s.tva_assuj';
         $sql .= ', s.mode_reglement_supplier, s.cond_reglement_supplier, s.localtax1_assuj, s.localtax1_value, s.localtax2_assuj, s.localtax2_value, s.fk_prospectlevel, s.default_lang, s.logo';
-        $sql .= ', s.outstanding_limit, s.import_key, s.canvas, s.fk_incoterms, s.location_incoterms';
+        $sql .= ', s.outstanding_limit, s.import_key, s.canvas, s.fk_incoterms, s.location_incoterms, s.currency';
         $sql .= ', fj.libelle as forme_juridique';
         $sql .= ', e.libelle as effectif';
         $sql .= ', c.code as country_code, c.label as country';
@@ -1171,6 +1177,8 @@ class Societe extends CommonObject
 				$this->fk_incoterms = $obj->fk_incoterms;
 				$this->location_incoterms = $obj->location_incoterms;
 				$this->libelle_incoterms = $obj->libelle_incoterms;
+				
+				$this->currency = $obj->currency;
 
                 $result = 1;
 

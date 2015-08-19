@@ -284,6 +284,12 @@ if ($id > 0)
 		else print ($img?$img.' ':'').$object->country;
 	}
 	print '</td></tr>';
+	
+	// Currency
+	print '<tr><td>'.$langs->trans("Devise").'</td><td colspan="3">';
+	print currency_name($object->currency ? $object->currency : $conf->currency,1);
+	print ' ('.$langs->getCurrencySymbol($object->currency ? $object->currency : $conf->currency).')';
+	print '</td></tr>';
 
 	// EMail
 	print '<td>'.$langs->trans('EMail').'</td><td colspan="3">'.dol_print_email($object->email,0,$object->id,'AC_EMAIL').'</td></tr>';
