@@ -23,6 +23,9 @@
 	<td><?php echo $this->tpl['description']; ?></td>
 	<td align="right"><?php echo $this->tpl['vat_rate']; ?></td>
 	<td align="right"><?php echo $this->tpl['price']; ?></td>
+	<?php if($conf->multidevises->enabled) { ?>
+		<td align="right"><?php echo $this->tpl['price_curr']; ?></td>	
+	<?php } ?>
 	<td align="right"><?php echo $this->tpl['qty']; ?></td>
     <?php
     if($conf->global->PRODUCT_USE_UNITS) echo '<td align="left">'.$langs->trans($this->tpl['unit']).'</td>';

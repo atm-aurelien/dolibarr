@@ -3113,6 +3113,9 @@ abstract class CommonObject
         print '<td>'.$langs->trans('Description').'</td>';
         print '<td align="right">'.$langs->trans('VAT').'</td>';
         print '<td align="right">'.$langs->trans('PriceUHT').'</td>';
+		if($conf->multidevises->enabled)
+		print '<td align="right">'.$langs->trans('PriceUHT').' '.$langs->getCurrencySymbol($object->currency).'</td>';
+		
         print '<td align="right">'.$langs->trans('Qty').'</td>';
 	    if($conf->global->PRODUCT_USE_UNITS)
 	    {
@@ -3126,8 +3129,8 @@ abstract class CommonObject
         foreach ($this->lines as $line)
         {
             $var=!$var;
-
-            if (is_object($hookmanager) && (($line->product_type == 9 && ! empty($line->special_code)) || ! empty($line->fk_parent_line)))
+			
+			            if (is_object($hookmanager) && (($line->product_type == 9 && ! empty($line->special_code)) || ! empty($line->fk_parent_line)))
             {
                 if (empty($line->fk_parent_line))
                 {
@@ -3138,7 +3141,7 @@ abstract class CommonObject
             }
             else
             {
-                $this->printOriginLine($line,$var);
+                $this->printOriginLine($line, $this, $var);
             }
 
             $i++;
@@ -3155,7 +3158,7 @@ abstract class CommonObject
      * 	@param	string				$var		Var
      * 	@return	void
      */
-    function printOriginLine($line,$var)
+    function printOriginLine($line, $object, $var)
     {
         global $langs, $conf;
 
@@ -3243,6 +3246,9 @@ abstract class CommonObject
 
         $this->tpl['vat_rate'] = vatrate($line->tva_tx, true);
         $this->tpl['price'] = price($line->subprice);
+		
+		if($conf->multidevises->enabled) $this->tpl['price_curr'] = price(round($line->subprice * $object->rate,2)) . ' '.$langs->getCurrencySymbol($object->currency);
+		
         $this->tpl['qty'] = (($line->info_bits & 2) != 2) ? $line->qty : '&nbsp;';
 	    if($conf->global->PRODUCT_USE_UNITS) $this->tpl['unit'] = $line->getLabelOfUnit('long');
         $this->tpl['remise_percent'] = (($line->info_bits & 2) != 2) ? vatrate($line->remise_percent, true) : '&nbsp;';

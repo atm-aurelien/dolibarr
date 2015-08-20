@@ -754,6 +754,9 @@ class Propal extends CommonObject {
 
 	}
 
+	/*
+	 * Calculating totals according to rate
+	 */
 	private function updateTotalHTCurrency() {
 		$this -> total_ht_curr = 0;
 		$this -> total_tva_curr = 0;
@@ -2766,8 +2769,7 @@ class PropaleLigne  extends CommonObjectLine {
 	// Total TVA  de la ligne toute quantite et incluant la remise ligne
 	var $total_ttc;
 	// Total TTC de la ligne toute quantite et incluant la remise ligne
-	
-	
+
 	//currency
 	var $subprice_curr;
 	var $total_ht_curr;
