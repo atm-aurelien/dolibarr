@@ -2890,6 +2890,9 @@ abstract class CommonObject
 
 		// Price HT
 		print '<td align="right" width="80">'.$langs->trans('PriceUHT').'</td>';
+		if($this->currency!=$conf->currency) {
+			print '<td align="right" width="80">'.$langs->trans('PriceUHT').' '.$langs->getCurrencySymbol($this->currency).'</td>';	
+		}
 
 		if ($inputalsopricewithtax) print '<td align="right" width="80">'.$langs->trans('PriceUTTC').'</td>';
 
@@ -2923,6 +2926,9 @@ abstract class CommonObject
 
 		// Total HT
 		print '<td align="right" width="50">'.$langs->trans('TotalHTShort').'</td>';
+		if($this->currency!=$conf->currency) {
+			print '<td align="right" width="80">'.$langs->trans('TotalHTShort').' '.$langs->getCurrencySymbol($this->currency).'</td>';	
+		}
 
 		print '<td></td>';  // No width to allow autodim
 

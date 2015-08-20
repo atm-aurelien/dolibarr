@@ -43,6 +43,7 @@ if (empty($inputalsopricewithtax)) $inputalsopricewithtax=0;
 // Define colspan for button Add
 $colspan = 3;	// Col total ht + col edit + col delete
 if (in_array($object->element,array('propal', 'askpricesupplier','facture','invoice','commande','order','order_supplier','invoice_supplier'))) $colspan++;	// With this, there is a column move button
+if($object->currency!=$conf->currency) $colspan++;
 //print $object->element;
 ?>
 
@@ -57,6 +58,9 @@ if (in_array($object->element,array('propal', 'askpricesupplier','facture','invo
 	<?php } ?>
 	<td align="right"><span id="title_vat"><?php echo $langs->trans('VAT'); ?></span></td>
 	<td align="right"><span id="title_up_ht"><?php echo $langs->trans('PriceUHT'); ?></span></td>
+	<?php if($object->currency!=$conf->currency) { ?>
+		<td align="right"><span id="title_up_ht"><?php echo $langs->trans('PriceUHT') . ' ' . $langs->getCurrencySymbol($object->currency); ?></span></td>
+	<?php } ?>
 	<?php if (! empty($inputalsopricewithtax)) { ?>
 	<td align="right"><span id="title_up_ttc"><?php echo $langs->trans('PriceUTTC'); ?></span></td>
 	<?php } ?>
@@ -222,6 +226,21 @@ else {
 	<td class="nobottom" align="right">
 	<input type="text" size="5" name="price_ht" id="price_ht" class="flat" value="<?php echo (isset($_POST["price_ht"])?$_POST["price_ht"]:''); ?>">
 	</td>
+	
+	<?php if($object->currency!=$conf->currency) { ?>
+	<td class="nobottom" align="right">
+	<input type="text" size="5" name="price_ht_curr" id="price_ht_curr" class="flat" value="<?php echo (isset($_POST["price_ht"])?$_POST["price_ht"]:''); ?>">
+	<script>
+		$('#price_ht_curr').on('keyup',function() {
+			$('#price_ht').val(Math.round(100*$('#price_ht_curr').val()/<?php echo $object->rate ?>)/100);
+		})
+		$('#price_ht').on('keyup',function() {
+			$('#price_ht_curr').val(Math.round(100*$('#price_ht').val()*<?php echo $object->rate ?>)/100);
+		})
+	</script>
+	</td>
+	<?php } ?>
+	
 	<?php if (! empty($inputalsopricewithtax)) { ?>
 	<td class="nobottom" align="right">
 	<input type="text" size="5" name="price_ttc" id="price_ttc" class="flat" value="<?php echo (isset($_POST["price_ttc"])?$_POST["price_ttc"]:''); ?>">
