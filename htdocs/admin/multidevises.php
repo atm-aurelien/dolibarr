@@ -29,6 +29,7 @@
 
 require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+require_once DOL_DOCUMENT_ROOT . '/core/class/openid.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/multidevises.lib.php';
 //require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
 
@@ -47,6 +48,49 @@ $label = GETPOST('label', 'alpha');
 $scandir = GETPOST('scandir', 'alpha');
 $type = 'multidevises';
 
+if(isset($_REQUEST['check'])) {
+	$OpenID = new SimpleOpenID;
+	$code = $OpenID -> CURL_Request(dolibarr_get_const($db, 'MULTIDEVISES_API_URL'));
+	if (dolibarr_get_const($db, 'MULTIDEVISES_API_MODE') == 'JSON') {
+		$json = json_decode($code, 1);
+
+		//Listing
+		$basePath = dolibarr_get_const($db, 'MULTIDEVISES_API_BASEPATH');
+		$tBases = explode('/', $basePath);
+		$jsonBase = $json;
+		foreach ($tBases as $subPath) {
+			if ($subPath)
+				$jsonBase = $jsonBase[$subPath];
+		}
+		$base = $jsonBase;
+
+		$coeff = 0;
+
+		$pathRates = dolibarr_get_const($db, 'MULTIDEVISES_API_RATESPATH');
+		$tRates = explode('/', $pathRates);
+		$jsonRates = $json;
+		foreach ($tRates as $subPath) {
+			if ($subPath == '[code]') {
+				foreach ($jsonRates as $code => $rate) {
+					//Les données sont relatives au USD. Il faut les mettre dans le taux de la devise par défaut
+					if (!$coeff) {
+						$coeff = 1 / $jsonRates[$conf -> currency];
+					}
+
+					$sql = "UPDATE " . MAIN_DB_PREFIX . "c_currencies SET current_rate='" . ($coeff * $rate) . "' WHERE code_iso='$code'";
+					$db -> query($sql);
+				}
+				break;
+			} elseif ($subPath) {
+				$jsonRates = $jsonRates[$subPath];
+			}
+		}
+	}
+	
+	header("Location: ?show");
+}
+
+
 /*
  * View
  */
@@ -57,8 +101,9 @@ print_fiche_titre($langs->trans("MultiDevisesConfig"),$linkback,'title_setup');
 
 $head = multidevises_admin_prepare_head();
 
-if(isset($_REQUEST['api'])) $tab='api';
+$tab='api';
 if(isset($_REQUEST['main'])) $tab='general';
+if(isset($_REQUEST['show'])) $tab='list';
 
 /*
  * Saving
@@ -91,7 +136,7 @@ if(isset($_REQUEST['main'])) $tab='general';
 
 dol_fiche_head($head, $tab, $langs->trans("Multidevises"), 0, 'invoice');
 
-if(isset($_REQUEST['api'])) {
+if(isset($_REQUEST['api']) || !$_GET) {
 ?>
 <form method="post">
 	<table class="noborder">
@@ -102,7 +147,8 @@ if(isset($_REQUEST['api'])) {
 		</tr>
 		<tr class="impair">
 			<td>
-				URL d'appel d'API
+				URL d'appel d'API<br/>
+				<i>Vous pouvez créer un compte gratuit sur le site <a href="https://openexchangerates.org/signup/free" target="_blank">OpenExchangeRates</a> (en anglais).</i>
 			</td>
 			<td>
 				<input type="text" name="MultiDevisesAPIURL" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_URL') ?>"/>
@@ -180,7 +226,7 @@ if(isset($_REQUEST['main'])) {
 				<input type="hidden" name="MultidevisesUpdateConv" id="MultiDevisesUpdateConv" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_UPDATE_CONV') ?>"/>
 				<?php if(dolibarr_get_const($db, 'MULTIDEVISES_UPDATE_CONV')=='1') { ?>
 				<a href="#" onclick="$('#MultiDevisesUpdateConv').val(0);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_on'); ?></a>
-				<?php } else {?>
+				<?php } else { ?>
 				<a href="#" onclick="$('#MultiDevisesUpdateConv').val(1);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_off'); ?></a>
 				<?php } ?>
 			</td>
@@ -193,13 +239,60 @@ if(isset($_REQUEST['main'])) {
 				<input type="hidden" name="MultidevisesCalcRate" id="MultidevisesCalcRate" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_CALC_RATE') ?>"/>
 				<?php if(dolibarr_get_const($db, 'MULTIDEVISES_CALC_RATE')=='1') { ?>
 				<a href="#" onclick="$('#MultidevisesCalcRate').val(0);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_on'); ?></a>
-				<?php } else {?>
+				<?php } else { ?>
 				<a href="#" onclick="$('#MultidevisesCalcRate').val(1);$('#formMain').submit();"><?php print img_picto($langs -> trans("Activated"), 'switch_off'); ?></a>
 				<?php } ?>
 			</td>
 		</tr>
 
 	</table>
+</form>
+<?php
+}
+
+if(isset($_REQUEST['show'])) {
+
+	
+	?>
+
+<form method="post" id="formMain">
+	<table class="noborder">
+		<tr class="liste_titre">
+			<td>
+				Devises 
+			</td>
+			<td>
+				Code ISO
+			</td>
+			<td>
+				Taux courant
+			</td>
+		</tr>
+		<?php
+		$sql="SELECT * FROM " . MAIN_DB_PREFIX . "c_currencies ORDER BY label ASC";
+		$resultset=$db->query($sql);
+		$i=0;
+		while($row= $db->fetch_object($resultset)) {
+			$class='pair';
+			if($i%2) $class='impair';
+			$i++;
+			?>
+			<tr class="<?php echo $class ?>">
+				<td>
+					<?php echo $row->label ?>
+				</td>
+				<td>
+					<?php echo $row->code_iso ?>
+				</td>
+				<td class="right">
+					<?php echo $row->current_rate ?>
+				</td>
+			</tr>
+			<?php
+		}
+?>
+	</table>
+	<input type="button" value="Rafraichir les taux" onclick="location.href='?show&check'"/>
 </form>
 <?php
 }

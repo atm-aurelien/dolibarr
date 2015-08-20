@@ -2230,8 +2230,8 @@ if ($action == 'create')
 
 	// Date invoice
 	print '<tr><td class="fieldrequired">' . $langs->trans('Date') . '</td><td colspan="2">';
-	$datefacture = dol_mktime(12, 0, 0, $_POST['remonth'], $_POST['reday'], $_POST['reyear']);
-	print $form->select_date($datefacture?$datefacture:$dateinvoice, '', '', '', '', "add", 1, 1, 1);
+	$datefacture = isset($_POST['remonth']) ? dol_mktime(12, 0, 0, $_POST['remonth'], $_POST['reday'], $_POST['reyear']) : '';
+	print $form->select_date($datefacture, '', '', '', '', "add", 1, 1, 1);
 	print '</td></tr>';
 
 	// Payment term

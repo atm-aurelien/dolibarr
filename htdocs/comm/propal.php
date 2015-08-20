@@ -1375,6 +1375,15 @@ if ($action == 'create')
 	print '<tr><td>' . $langs->trans('PaymentMode') . '</td><td colspan="2">';
 	$form->select_types_paiements($soc->mode_reglement_id, 'mode_reglement_id');
 	print '</td></tr>';
+	
+	// Currency
+	if($conf->multidevises->enabled) {
+		print '<tr><td>' . $langs->trans('Currency') . '</td><td colspan="2">';
+		print $form->selectCurrency($conf->currency,"currency");
+		print '<script>$("#socid").on("change", function(){var c=$(this).find("option[value=\""+$(this).val()+"\"]").attr("data-currency");$("#currency").val(c)});</script>';
+		print '</td></tr>';
+	}
+	
 
     // Bank Account
     if (! empty($conf->global->BANK_ASK_PAYMENT_BANK_DURING_PROPOSAL) && $conf->banque->enabled) {

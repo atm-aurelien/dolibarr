@@ -21,6 +21,11 @@ function multidevises_admin_prepare_head()
 	$head[$h][1] = $langs->trans("General");
 	$head[$h][2] = 'general';
 	$h++;
+	
+	$head[$h][0] = DOL_URL_ROOT.'/admin/multidevises.php?show';
+	$head[$h][1] = $langs->trans("Listing");
+	$head[$h][2] = 'list';
+	$h++;
 
 	return $head;
 }
