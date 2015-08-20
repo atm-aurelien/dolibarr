@@ -837,7 +837,7 @@ CREATE TABLE IF NOT EXISTS `llx_document_currency` (
 --
 -- Index pour la table `llx_document_currency`
 --
-ALTER TABLE `llx_devise_document`
+ALTER TABLE `llx_document_currency`
  ADD PRIMARY KEY (`rowid`);
 
 --
@@ -847,10 +847,10 @@ ALTER TABLE `llx_devise_document`
 --
 -- AUTO_INCREMENT pour la table `llx_document_currency`
 --
-ALTER TABLE `llx_devise_document`
+ALTER TABLE `llx_document_currency`
 MODIFY `rowid` int(11) NOT NULL AUTO_INCREMENT;
 
-
+ALTER TABLE `llx_document_currency` ADD UNIQUE( `element_type`, `element_id`);
 
 
 

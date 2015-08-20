@@ -891,7 +891,7 @@ class Form
         $outarray=array();
 
         // On recherche les societes
-        $sql = "SELECT s.rowid, s.nom as name, s.client, s.fournisseur, s.code_client, s.code_fournisseur";
+        $sql = "SELECT s.rowid, s.nom as name, s.client, s.fournisseur, s.code_client, s.code_fournisseur, s.currency";
         $sql.= " FROM ".MAIN_DB_PREFIX ."societe as s";
         if (!$user->rights->societe->client->voir && !$user->societe_id) $sql .= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
         $sql.= " WHERE s.entity IN (".getEntity('societe', 1).")";
@@ -977,11 +977,11 @@ class Form
                     }
                     if ($selected > 0 && $selected == $obj->rowid)
                     {
-                        $out.= '<option value="'.$obj->rowid.'" selected>'.$label.'</option>';
+                        $out.= '<option value="'.$obj->rowid.'" data-currency="'.($obj->currency ? $obj->currency : $conf->currency) .'" selected>'.$label.'</option>';
                     }
                     else
 					{
-                        $out.= '<option value="'.$obj->rowid.'">'.$label.'</option>';
+                        $out.= '<option value="'.$obj->rowid.'" data-currency="'.($obj->currency ? $obj->currency : $conf->currency) .'">'.$label.'</option>';
                     }
 
                     array_push($outarray, array('key'=>$obj->rowid, 'value'=>$obj->rowid, 'label'=>$label));
