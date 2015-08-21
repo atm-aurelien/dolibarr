@@ -305,7 +305,7 @@ if (empty($reshook))
 			$object->currency       	   = GETPOST('currency', 'alpha');
 		}
 		else {
-			$object->currency = '';
+			$object->currency = $conf->currency;
 		}
 
 
@@ -1391,7 +1391,7 @@ else
 					$object->currency				= GETPOST('currency', 'alpha');	
 				}
 				else {
-					$object->currency=null;
+					$object->currency = $conf->currency;
 				}
 				
 

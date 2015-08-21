@@ -1310,10 +1310,14 @@ function pdf_getlineupexcltax($object,$i,$outputlangs,$hidedetails=0)
 	else
 	{
 		if (empty($hidedetails) || $hidedetails > 1) {
-			if($conf->multidevises->enabled)
-				return price(round($sign * $object->lines[$i]->subprice * $object->rate, 2), 0, $outputlangs);
+			
+			$price = $sign * $object->lines[$i]->subprice;
+			if($conf->multidevises->enabled){
+				$priceRated=$price * $object->rate;
+				return price(round($priceRated, 2), 0, $outputlangs);
+			}
 			else
-				return price($sign * $object->lines[$i]->subprice, 0, $outputlangs);
+				return price($price, 0, $outputlangs);
 		}
 	}
 }
@@ -1343,11 +1347,11 @@ function pdf_getlineupwithtax($object,$i,$outputlangs,$hidedetails=0)
 	else
 	{
 		if (empty($hidedetails) || $hidedetails > 1) {
-			$p=($object->lines[$i]->subprice) + ($object->lines[$i]->subprice)*($object->lines[$i]->tva_tx)/100;
+			$priceAT=($object->lines[$i]->subprice) + ($object->lines[$i]->subprice)*($object->lines[$i]->tva_tx)/100;
 			if($conf->multidevises->enabled)
-				return price(round($p, 2), 0, $outputlangs);
+				return price(round($priceAT, 2), 0, $outputlangs);
 			else
-				return price($p, 0, $outputlangs);
+				return price($priceAT, 0, $outputlangs);
 		}
 	}
 }
@@ -1599,10 +1603,13 @@ function pdf_getlinetotalexcltax($object,$i,$outputlangs,$hidedetails=0)
 		else
 		{
 			if (empty($hidedetails) || $hidedetails > 1) {
-				if($conf->multidevises->enabled)
-					return price(round($sign * $object->lines[$i]->total_ht * $object->rate, 2), 0, $outputlangs);
+				$price=$sign * $object->lines[$i]->total_ht;
+				if($conf->multidevises->enabled){
+					$priceRated=$price*$object->rate;
+					return price(round($priceRated, 2), 0, $outputlangs);
+				}
 				else
-					return price($sign * $object->lines[$i]->total_ht, 0, $outputlangs);
+					return price($price, 0, $outputlangs);
 			}
 		}
 	}
@@ -1639,11 +1646,11 @@ function pdf_getlinetotalwithtax($object,$i,$outputlangs,$hidedetails=0)
 		else
 		{
 			if (empty($hidedetails) || $hidedetails > 1) {
-				$p=($object->lines[$i]->total_ht) + ($object->lines[$i]->total_ht)*($object->lines[$i]->tva_tx)/100;
+				$price=($object->lines[$i]->total_ht) + ($object->lines[$i]->total_ht)*($object->lines[$i]->tva_tx)/100;
 				if($conf->multidevises->enabled)
-					return price(round($p * $object->rate, 2), 0, $outputlangs);
+					return price(round($price * $object->rate, 2), 0, $outputlangs);
 				else
-					return price($p, 0, $outputlangs);
+					return price($price, 0, $outputlangs);
 			}
 		}
 	}

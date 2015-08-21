@@ -572,6 +572,7 @@ class Facture extends CommonInvoice {
 			$this -> total_tva_curr += round($line -> total_tva * $this -> rate, 2);
 			$this -> total_ttc_curr += round($line -> total_ttc * $this -> rate, 2);
 		}
+		
 
 	}
 

@@ -157,8 +157,6 @@ ALTER TABLE llx_facture ADD COLUMN situation_counter smallint;
 ALTER TABLE llx_facture ADD COLUMN situation_final smallint;
 ALTER TABLE llx_facturedet ADD COLUMN situation_percent real;
 ALTER TABLE llx_facturedet ADD COLUMN fk_prev_id integer;
-ALTER TABLE llx_facture ADD COLUMN second_currency varchar(3) NULL;
-ALTER TABLE llx_facture ADD COLUMN second_currency_rate double;
 
 -- Convert SMTP config to main entity, so new entities don't get the old values
 UPDATE llx_const SET entity = __ENCRYPT('1')__ WHERE __DECRYPT('entity')__ = 0 AND __DECRYPT('name')__ = "MAIN_MAIL_SENDMODE";
@@ -799,23 +797,6 @@ ALTER TABLE llx_societe_remise_except MODIFY COLUMN description text NOT NULL;
 ALTER TABLE llx_societe ADD COLUMN currency varchar(3);
 
 
-
--- phpMyAdmin SQL Dump
--- version 4.2.12deb2
--- http://www.phpmyadmin.net
---
--- Client :  localhost
--- Généré le :  Mer 19 Août 2015 à 17:14
--- Version du serveur :  5.6.25-0ubuntu0.15.04.1
--- Version de PHP :  5.6.4-4ubuntu6.2
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET time_zone = "+00:00";
-
---
--- Base de données :  `dolibarr_dev`
---
-
 -- --------------------------------------------------------
 
 --
@@ -852,25 +833,6 @@ MODIFY `rowid` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `llx_document_currency` ADD UNIQUE( `element_type`, `element_id`);
 
-
-
-
-
--- phpMyAdmin SQL Dump
--- version 4.2.12deb2
--- http://www.phpmyadmin.net
---
--- Client :  localhost
--- Généré le :  Mer 19 Août 2015 à 17:15
--- Version du serveur :  5.6.25-0ubuntu0.15.04.1
--- Version de PHP :  5.6.4-4ubuntu6.2
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET time_zone = "+00:00";
-
---
--- Base de données :  `dolibarr_dev`
---
 
 -- --------------------------------------------------------
 
