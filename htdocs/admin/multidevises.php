@@ -142,12 +142,12 @@ if(isset($_REQUEST['api']) || !$_GET) {
 	<table class="noborder">
 		<tr class="liste_titre">
 			<td colspan="2">
-				Configuration de l'API
+				<?php echo $langs->trans("MultiDevisesAPIConf") ?>
 			</td>
 		</tr>
 		<tr class="impair">
 			<td>
-				URL d'appel d'API<br/>
+				<?php echo $langs->trans("MultiDevisesAPIURL") ?><br/>
 				<i>Vous pouvez créer un compte gratuit sur le site <a href="https://openexchangerates.org/signup/free" target="_blank">OpenExchangeRates</a> (en anglais).</i>
 			</td>
 			<td>
@@ -156,7 +156,7 @@ if(isset($_REQUEST['api']) || !$_GET) {
 		</tr>
 		<tr class="pair">
 			<td>
-				Mode de récupération
+				<?php echo $langs->trans("MultiDevisesAPIGetMode") ?>
 			</td>
 			<td>
 				<select name="MultidevisesRecupMode">
@@ -167,7 +167,7 @@ if(isset($_REQUEST['api']) || !$_GET) {
 		</tr>
 		<tr class="impair">
 			<td>
-				Chemin devise de base
+				<?php echo $langs->trans("MultiDevisesAPIBasePath") ?>
 			</td>
 			<td>
 				<input type="text" name="MultiDevisesBasePath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_BASEPATH'); ?>"/>
@@ -175,7 +175,7 @@ if(isset($_REQUEST['api']) || !$_GET) {
 		</tr>
 		<tr class="pair">
 			<td>
-				Chemin date de valeur
+				<?php echo $langs->trans("MultiDevisesAPIDatePath") ?>
 			</td>
 			<td>
 				<input type="text" name="MultiDevisesDatePath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_DATEPATH'); ?>"/>
@@ -183,14 +183,14 @@ if(isset($_REQUEST['api']) || !$_GET) {
 		</tr>
 		<tr class="impair">
 			<td>
-				Chemin ratios
+				<?php echo $langs->trans("MultiDevisesAPIRatesPath") ?>
 			</td>
 			<td>
 				<input type="text" name="MultiDevisesRatesPath" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_API_RATESPATH'); ?>"/>
 			</td>
 		</tr>
 	</table>
-	<input type="submit" value="Enregistrer"/>
+	<input type="submit" value="<?php echo $langs->trans("MultiDevisesSave") ?>"/>
 </form>
 <?php
 }
@@ -201,26 +201,26 @@ if(isset($_REQUEST['main'])) {
 	<table class="noborder">
 		<tr class="liste_titre">
 			<td colspan="2">
-				Taux
+				<?php echo $langs->trans("MultiDevisesRates") ?>
 			</td>
 		</tr>
 		<tr class="pair">
 			<td>
-				Conserver l'historique des taux sur
+				<?php echo $langs->trans("MultiDevisesRatesSave") ?>
 			</td>
 			<td>
 				<select name="MultidevisesRateHisto" onchange="$('#formMain').submit();">
-					<option value="0"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '0' ? ' selected="selected"' : ''; ?>>jamais</option>
-					<option value="1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '1' ? ' selected="selected"' : ''; ?>>1 mois</option>
-					<option value="6"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '6' ? ' selected="selected"' : ''; ?>>6 mois</option>
-					<option value="12"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '12' ? ' selected="selected"' : ''; ?>>1 an</option>
-					<option value="-1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '-1' ? ' selected="selected"' : ''; ?>>Infini</option>
+					<option value="0"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '0' ? ' selected="selected"' : ''; ?>><?php echo $langs->trans("MultiDevisesRatesSaveNever") ?></option>
+					<option value="1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '1' ? ' selected="selected"' : ''; ?>><?php echo $langs->trans("MultiDevisesRatesSave1Month") ?></option>
+					<option value="6"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '6' ? ' selected="selected"' : ''; ?>><?php echo $langs->trans("MultiDevisesRatesSave6Month") ?></option>
+					<option value="12"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '12' ? ' selected="selected"' : ''; ?>><?php echo $langs->trans("MultiDevisesRatesSave12Month") ?></option>
+					<option value="-1"<?php echo dolibarr_get_const($db, 'MULTIDEVISES_RATE_HISTO') == '-1' ? ' selected="selected"' : ''; ?>><?php echo $langs->trans("MultiDevisesRatesSaveForever") ?></option>
 				</select>
 			</td>
 		</tr>
 		<tr class="impair">
 			<td>
-				Autoriser la mise à jour du taux lors de la conversion d'une propale en commande 
+				<?php echo $langs->trans("MultiDevisesAllowUpdateRate") ?> 
 			</td>
 			<td>
 				<input type="hidden" name="MultidevisesUpdateConv" id="MultiDevisesUpdateConv" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_UPDATE_CONV'); ?>"/>
@@ -233,7 +233,7 @@ if(isset($_REQUEST['main'])) {
 		</tr>
 		<tr class="pair">
 			<td>
-				Calculer le taux à la volée (ne pas stocker la valeur convertie en base)
+				<?php echo $langs->trans("MultiDevisesCalcPrices") ?> 
 			</td>
 			<td>
 				<input type="hidden" name="MultidevisesCalcRate" id="MultidevisesCalcRate" value="<?php echo dolibarr_get_const($db, 'MULTIDEVISES_CALC_RATE'); ?>"/>
@@ -256,9 +256,9 @@ if(isset($_REQUEST['show'])) {
 <form method="post" id="formMain">
 	<table class="noborder">
 		<tr class="liste_titre">
-			<td>Devises </td>
-			<td>Code ISO</td>
-			<td>Taux courant</td>
+			<td><?php echo $langs->trans("MultiDevisesCurrencies") ?> </td>
+			<td><?php echo $langs->trans("MultiDevisesISO") ?></td>
+			<td><?php echo $langs->trans("MultiDevisesCurrentRate") ?></td>
 		</tr>
 		<?php
 		$i=0;
@@ -266,7 +266,7 @@ if(isset($_REQUEST['show'])) {
 		$resultset=$db->query($sql);
 		if($resultset) {
 			while($row= $db->fetch_object($resultset)) {
-				$class='pair';
+				$class='pair';	
 				if($i%2) $class='impair';
 				$i++;
 				?>
@@ -288,7 +288,7 @@ if(isset($_REQUEST['show'])) {
 		}
 		?>
 	</table>
-	<input type="button" value="Rafraichir les taux" onclick="location.href='?show&check'"/>
+	<input type="button" value="<?php echo $langs->trans("MultiDevisesRatesRefresh") ?>" onclick="location.href='?show&check'"/>
 </form>
 <?php
 }

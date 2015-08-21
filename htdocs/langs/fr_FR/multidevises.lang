@@ -1,2 +1,30 @@
 MultiDevisesConfig=Configuration multi-devises
 Multidevises=Multi-devises
+
+MultiDevisesAPIConf=Configuration de l'API
+MultiDevisesAPIURL=URL d'appel de l'API
+MultiDevisesAPIGetMode=Mode de récupération
+MultiDevisesAPIBasePath=Chemin devise de base
+MultiDevisesAPIDatePath=Chemin date de valeur
+MultiDevisesAPIRatesPath=Chemin ratios
+
+MultiDevisesRates=Taux
+MultiDevisesRatesSave=Conserver l'historique des taux sur
+MultiDevisesRatesSaveNever=Jamais
+MultiDevisesRatesSave1Month=1 mois
+MultiDevisesRatesSave3Month=3 mois
+MultiDevisesRatesSave6Month=6 mois
+MultiDevisesRatesSave12Month=12 mois
+MultiDevisesRatesSaveForever=Infini
+MultiDevisesAllowUpdateRate=Autoriser la mise à jour du taux lors de la conversion d'une propale en commande
+MultiDevisesCalcPrices=Calculer le taux à la volée (ne pas stocker la valeur convertie en base)
+
+MultiDevisesCurrencies=Devises
+MultiDevisesISO=Code ISO 
+MultiDevisesCurrentRate=Taux courant 
+MultiDevisesRatesRefresh=Rafraichir les taux
+
+
+MultiDevisesErrorListing=Error on currencies listing
+
+MultiDevisesSave=Enregistrer
