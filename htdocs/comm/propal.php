@@ -2008,7 +2008,7 @@ if ($action == 'create') {
 		print '<table width="100%" class="nobordernopadding"><tr><td>';
 		print $langs -> trans('Currency');
 		print '<td><td align="right">';
-		if ($user -> rights -> propal -> creer && $action != 'editcurrency')
+		if ($action != 'editcurrency')
 			print '<a href="' . DOL_URL_ROOT . '/comm/propal.php?id=' . $object -> id . '&action=editcurrency">' . img_edit() . '</a>';
 		else
 			print '&nbsp;';
