@@ -354,7 +354,7 @@ if (empty($reshook)) {
 
 				$object -> origin = GETPOST('origin');
 				$object -> origin_id = GETPOST('originid');
-
+				
 				for ($i = 1; $i <= $conf -> global -> PRODUCT_SHOW_WHEN_CREATE; $i++) {
 					if ($_POST['idprod' . $i]) {
 						$xid = 'idprod' . $i;

@@ -424,6 +424,17 @@ if (empty($reshook)) {
 
 			// Insert default contacts if defined
 			if ($object_id > 0) {
+
+				//MAJ doc currency
+				if ($conf -> multidevises -> enabled) {
+					$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $_POST['currency'] . "'";
+					$result = $db -> query($sql);
+					$line = $db -> fetch_object($result);
+					$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+								VALUES ('command',$object_id,'" . $_POST['currency'] . "'," . $line -> current_rate . ")";
+					$db -> query($sql);
+				}
+
 				if (GETPOST('contactid')) {
 					$result = $object -> add_contact(GETPOST('contactid'), 'CUSTOMER', 'external');
 					if ($result < 0) {
@@ -1343,6 +1354,14 @@ if ($action == 'create' && $user -> rights -> commande -> creer) {
 	$form -> select_types_paiements($mode_reglement_id, 'mode_reglement_id');
 	print '</td></tr>';
 
+	// Currency
+	if ($conf -> multidevises -> enabled) {
+		print '<tr><td>' . $langs -> trans('Currency') . '</td><td colspan="2">';
+		print $form -> selectCurrency($conf -> currency, "currency");
+		print '<script>$("#socid").on("change", function(){var c=$(this).find("option[value=\""+$(this).val()+"\"]").attr("data-currency");$("#currency").val(c)});</script>';
+		print '</td></tr>';
+	}
+
 	// Bank Account
 	if (!empty($conf -> global -> BANK_ASK_PAYMENT_BANK_DURING_ORDER) && !empty($conf -> banque -> enabled)) {
 		print '<tr><td>' . $langs -> trans('BankAccount') . '</td><td colspan="2">';
@@ -2027,6 +2046,7 @@ if ($action == 'create' && $user -> rights -> commande -> creer) {
 		}
 
 		if ($conf -> multidevises -> enabled) {
+
 			print '<tr><td height="10" width="25%">';
 			print '<table width="100%" class="nobordernopadding"><tr><td>';
 			print $langs -> trans('Currency');
@@ -2051,73 +2071,73 @@ if ($action == 'create' && $user -> rights -> commande -> creer) {
 		}
 
 		// Amount HT
-	print '<tr><td height="10" width="25%">' . $langs -> trans('AmountHT') . '</td>';
-	if ($conf -> multidevises -> enabled) {
-		print '<td class="nowrap right">' . price($object -> total_ht_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
-		print '<td class="nowrap right">' . price($object -> total_ht, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-
-	} else {
-		print '<td class="nowrap" colspan="2">' . price($object -> total_ht, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	}
-	// Margin Infos
-	if (!empty($conf -> margin -> enabled)) {
-		print '<td valign="top" width="50%" rowspan="4">';
-		$object -> displayMarginInfos();
-		print '</td>';
-	}
-	print '</tr>';
-
-	// Amount VAT
-	print '<tr><td height="10">' . $langs -> trans('AmountVAT') . '</td>';
-	if ($conf -> multidevises -> enabled) {
-		
-		print '<td class="nowrap right">' . price($object -> total_tva_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
-		print '<td class="nowrap right">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	} else {
-		print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	}
-	//print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	print '</tr>';
-
-	// Amount Local Taxes
-	if ($mysoc -> localtax1_assuj == "1" || $object -> total_localtax1 != 0)// Localtax1
-	{
-		print '<tr><td height="10">' . $langs -> transcountry("AmountLT1", $mysoc -> country_code) . '</td>';
+		print '<tr><td height="10" width="25%">' . $langs -> trans('AmountHT') . '</td>';
 		if ($conf -> multidevises -> enabled) {
-			
-			print '<td class="nowrap right">' . price(round($object -> total_localtax1 * $object -> rate, 2), '', $langs, 0, -1, -1, $object -> currency) . '</td>';
-			print '<td class="nowrap right">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			print '<td class="nowrap right">' . price($object -> total_ht_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
+			print '<td class="nowrap right">' . price($object -> total_ht, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+
 		} else {
-			print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			print '<td class="nowrap" colspan="2">' . price($object -> total_ht, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 		}
-		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-		print '<td></td></tr>';
-	}
-	if ($mysoc -> localtax2_assuj == "1" || $object -> total_localtax2 != 0)// Localtax2
-	{
-		print '<tr><td height="10">' . $langs -> transcountry("AmountLT2", $mysoc -> country_code) . '</td>';
-		if ($conf -> multidevises -> enabled) {
-			
-			print '<td class="nowrap right">' . price(round($object -> total_localtax2 * $object -> rate, 2), '', $langs, 0, -1, -1, $object -> currency) . '</td>';
-			print '<td class="nowrap right">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-		} else {
-			print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		// Margin Infos
+		if (!empty($conf -> margin -> enabled)) {
+			print '<td valign="top" width="50%" rowspan="4">';
+			$object -> displayMarginInfos();
+			print '</td>';
 		}
-		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 		print '</tr>';
-	}
 
-	// Amount TTC
-	print '<tr><td height="10">' . $langs -> trans('AmountTTC') . '</td>';
-	if ($conf -> multidevises -> enabled) {
-		
-		print '<td class="nowrap right">' . price($object -> total_ttc_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
-		print '<td class="nowrap right">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	} else {
-		print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	}
-	//print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
-	print '</tr>';
+		// Amount VAT
+		print '<tr><td height="10">' . $langs -> trans('AmountVAT') . '</td>';
+		if ($conf -> multidevises -> enabled) {
+
+			print '<td class="nowrap right">' . price($object -> total_tva_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
+			print '<td class="nowrap right">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		print '</tr>';
+
+		// Amount Local Taxes
+		if ($mysoc -> localtax1_assuj == "1" || $object -> total_localtax1 != 0)// Localtax1
+		{
+			print '<tr><td height="10">' . $langs -> transcountry("AmountLT1", $mysoc -> country_code) . '</td>';
+			if ($conf -> multidevises -> enabled) {
+
+				print '<td class="nowrap right">' . price(round($object -> total_localtax1 * $object -> rate, 2), '', $langs, 0, -1, -1, $object -> currency) . '</td>';
+				print '<td class="nowrap right">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			} else {
+				print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			}
+			//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			print '<td></td></tr>';
+		}
+		if ($mysoc -> localtax2_assuj == "1" || $object -> total_localtax2 != 0)// Localtax2
+		{
+			print '<tr><td height="10">' . $langs -> transcountry("AmountLT2", $mysoc -> country_code) . '</td>';
+			if ($conf -> multidevises -> enabled) {
+
+				print '<td class="nowrap right">' . price(round($object -> total_localtax2 * $object -> rate, 2), '', $langs, 0, -1, -1, $object -> currency) . '</td>';
+				print '<td class="nowrap right">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			} else {
+				print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			}
+			//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+			print '</tr>';
+		}
+
+		// Amount TTC
+		print '<tr><td height="10">' . $langs -> trans('AmountTTC') . '</td>';
+		if ($conf -> multidevises -> enabled) {
+
+			print '<td class="nowrap right">' . price($object -> total_ttc_curr, '', $langs, 0, -1, -1, $object -> currency) . '</td>';
+			print '<td class="nowrap right">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		print '</tr>';
 		// Statut
 		print '<tr><td>' . $langs -> trans('Status') . '</td><td>' . $object -> getLibStatut(4) . '</td></tr>';
 

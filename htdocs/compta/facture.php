@@ -2163,6 +2163,16 @@ if ($action == 'create') {
 	print '<tr><td>' . $langs -> trans('PaymentMode') . '</td><td colspan="3">';
 	$form -> select_types_paiements(isset($_POST['mode_reglement_id']) ? $_POST['mode_reglement_id'] : $mode_reglement_id, 'mode_reglement_id', 'CRDT');
 	print '</td></tr>';
+	
+	
+	// Currency
+	if ($conf -> multidevises -> enabled) {
+		print '<tr><td>' . $langs -> trans('Currency') . '</td><td colspan="2">';
+		print $form -> selectCurrency($conf -> currency, "currency");
+		print '<script>$("#socid").on("change", function(){var c=$(this).find("option[value=\""+$(this).val()+"\"]").attr("data-currency");$("#currency").val(c)});</script>';
+		print '</td></tr>';
+	}
+	
 
 	// Bank Account
 	print '<tr><td>' . $langs -> trans('BankAccount') . '</td><td colspan="3">';
