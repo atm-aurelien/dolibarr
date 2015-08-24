@@ -511,10 +511,20 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                 print '<tr class="liste_titre">';
                 print '<td>'.$arraytitle.'</td>';
                 print '<td align="center">'.$langs->trans('Date').'</td>';
+				if ($conf->multidevises->enabled)
+					print '<td align="right">' . $langs->trans('Currency') . '</td>';
                 print '<td align="right">'.$langs->trans('AmountTTC').'</td>';
+				if ($conf->multidevises->enabled)
+					print '<td align="right">' . $langs->trans('AmountTTC') . ' devisé</td>';
                 print '<td align="right">'.$alreadypayedlabel.'</td>';
+				if ($conf->multidevises->enabled)
+					print '<td align="right">' . $alreadypayedlabel . ' devisé</td>';
                 print '<td align="right">'.$remaindertopay.'</td>';
+				if ($conf->multidevises->enabled)
+					print '<td align="right">' . $remaindertopay . ' devisé</td>';
                 print '<td align="right">'.$langs->trans('PaymentAmount').'</td>';
+				if ($conf->multidevises->enabled)
+					print '<td align="right">' . $langs->trans('PaymentAmount') . ' devisé</td>';
                 print '<td align="right">&nbsp;</td>';
                 print "</tr>\n";
 
@@ -548,16 +558,32 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
                     // Price
                     print '<td align="right">'.price($sign * $objp->total_ttc).'</td>';
-
+					
+					if ($conf->multidevises->enabled) {
+						print '<td align="right">' . price($sign * $invoice->total_ttc_curr) . ' ' . $langs->getCurrencySymbol($invoice->currency) . '</td>';
+					}
+					
                     // Received or paid back
                     print '<td align="right">'.price($sign * $paiement);
                     if ($creditnotes) print '+'.price($creditnotes);
                     if ($deposits) print '+'.price($deposits);
                     print '</td>';
+					
+					if ($conf->multidevises->enabled) {
+						print '<td align="right">' . price($sign * $paiement * $invoice->rate);
+						if ($creditnotes)
+							print '+' . price($creditnotes * $invoice->rate);
+						if ($deposits)
+							print '+' . price($deposits * $invoice->rate);
+						print $langs->getCurrencySymbol($invoice->currency) . '</td>';
+
+					}
 
                     // Remain to take or to pay back
                     print '<td align="right">'.price($sign * $remaintopay).'</td>';
-                    //$test= price(price2num($objp->total_ttc - $paiement - $creditnotes - $deposits));
+                    if ($conf->multidevises->enabled)
+						print '<td align="right">' . price(round($sign * $remaintopay * $invoice->rate, 2)) . ' ' . $langs->getCurrencySymbol($invoice->currency) . '</td>';
+					//$test= price(price2num($objp->total_ttc - $paiement - $creditnotes - $deposits));
 
                     // Amount
                     print '<td align="right">';
@@ -572,6 +598,9 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 							print img_picto("Auto fill",'rightarrow', "class='AutoFillAmout' data-rowname='".$namef."' data-value='".($sign * $remaintopay)."'");
                         print '<input type=hidden name="'.$nameRemain.'" value="'.$remaintopay.'">';
                         print '<input type="text" size="8" name="'.$namef.'" value="'.$_POST[$namef].'">';
+						if ($conf->multidevises->enabled)
+							print '<span title="Calcul du montant dans votre devise avec le taux du jour. En vert si vous êtes gagnant sur le change." 
+							style="color:' . ($currency->current_rate < $invoice->rate ? 'orange' : 'darkgreen') . '" id="' . $namef . '_newcurr"></span>';
                     }
                     else
                     {
@@ -579,6 +608,43 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                         print '<input type="hidden" name="'.$namef.'" value="'.$_POST[$namef].'">';
                     }
                     print "</td>";
+					
+					if ($conf->multidevises->enabled) {
+
+						$resultset = $db->query("SELECT * FROM " . MAIN_DB_PREFIX . "c_currencies WHERE code_iso='" . $invoice->currency . "'");
+						$currency = $db->fetch_object($resultset);
+
+						// Amount
+						print '<td align="right">';
+
+						// Add remind amount
+						$namef = 'amount_' . $objp->facid;
+						$nameRemain = 'remain_' . $objp->facid;
+
+						if ($action != 'add_paiement') {
+							if (!empty($conf->global->FAC_AUTO_FILLJS))
+								print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmout' data-rowname='" . $namef . "' data-value='" . ($sign * $remaintopay) . "'");
+							print '<input type=hidden name="curr_' . $nameRemain . '" value="' . round($remaintopay * $invoice->rate, 2) . '">';
+							print '<input type="text" size="8" name="curr_' . $namef . '" id="curr_' . $namef . '" value="' . round($_POST[$namef] * $invoice->rate, 2) . '">';
+
+						} else {
+							print '<input type="text" size="8" name="curr_' . $namef . '_disabled" value="' . round($_POST[$namef] * $invoice->rate, 2) . '" disabled>';
+							print '<input type="hidden" name="curr_' . $nameRemain . '_disabled" id="curr_' . $nameRemain . '_disabled" value="' . round($remaintopay * $invoice->rate, 2) . '">';
+						}
+						print '<script>
+							$("#' . $namef . '").on("keyup",function(){
+								$("#curr_' . $namef . '").val(Math.round(100*$("#' . $namef . '").val()*' . $invoice->rate . ')/100);
+								$("#' . $namef . '_newcurr").text(Math.round(100*$("#' . $namef . '_curr").val()/' . $currency->current_rate . ')/100);
+							});
+							$("#curr_' . $namef . '").on("keyup",function(){
+								$("#' . $namef . '").val(Math.round(100*$("#curr_' . $namef . '").val()/' . $invoice->rate . ')/100);
+								$("#' . $namef . '_newcurr").text(Math.round(100*$("#curr_' . $namef . '").val()/' . $currency->current_rate . ')/100);
+							});
+							
+							$("#' . $namef . '").on("change",function(){$("#' . $namef . '_newcurr").text(Math.round(100*$("#' . $namef . '").val()*' . $currency->current_rate . ')/100);});
+							</script>';
+						print "</td>";
+					}
 
                     // Warning
                     print '<td align="center" width="16">';

@@ -214,6 +214,13 @@ class Propal extends CommonObject
 	 * Billed quote
 	 */
 	const STATUS_BILLED = 4;
+	
+	// Multidevises
+	var $currency;
+	var $rate;
+	var $total_ht_curr;
+	var $total_tva_curr;
+	var $total_ttc_curr;
 
     /**
      *	Constructor
@@ -1394,6 +1401,20 @@ class Propal extends CommonObject
                         //print "xx $i ".$this->lines[$i]->fk_product;
                         $i++;
                     }
+
+					//multidevises
+					if ($conf->multidevises->enabled) {
+						$sql = "SELECT currency, rate FROM " . MAIN_DB_PREFIX . "document_currency 
+					WHERE element_type='propal' AND element_id=" . $this->id;
+						$result = $this->db->query($sql);
+						$doccur = $this->db->fetch_object($result);
+						if ($doccur) {
+							$this->currency = $doccur->currency;
+							$this->rate = $doccur->rate;
+							$this->updateTotalHTCurrency();
+						}
+					}
+
                     $this->db->free($result);
                 }
                 else
@@ -1415,6 +1436,21 @@ class Propal extends CommonObject
             return -1;
         }
     }
+
+	/*
+	 * Calculating totals according to rate
+	 */
+	private function updateTotalHTCurrency() {
+		$this->total_ht_curr = 0;
+		$this->total_tva_curr = 0;
+		$this->total_ttc_curr = 0;
+		foreach ($this->lines as $line) {
+			$this->total_ht_curr += round($line->total_ht * $this->rate, 2);
+			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
+			$this->total_ttc_curr += round($line->total_ttc * $this->rate, 2);
+		}
+
+	}
 
     /**
      *	Update value of extrafields on the proposal

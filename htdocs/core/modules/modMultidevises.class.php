@@ -78,9 +78,7 @@ class modMultidevises extends DolibarrModules
 		// Boxes
 		//$this->boxes = array(0=>array(1=>'box_factures_imp.php'),1=>array(1=>'box_factures.php'));
 		$this->boxes = array(
-				0=>array('file'=>'box_factures_imp.php','enabledbydefaulton'=>'Home'),
-				1=>array('file'=>'box_factures.php','enabledbydefaulton'=>'Home'),
-				2=>array('file'=>'box_graph_invoices_permonth.php','enabledbydefaulton'=>'Home')
+				
 		);
 
 		// Permissions

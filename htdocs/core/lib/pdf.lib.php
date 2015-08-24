@@ -1309,7 +1309,15 @@ function pdf_getlineupexcltax($object,$i,$outputlangs,$hidedetails=0)
 	}
 	else
 	{
-		if (empty($hidedetails) || $hidedetails > 1) return price($sign * $object->lines[$i]->subprice, 0, $outputlangs);
+		if (empty($hidedetails) || $hidedetails > 1) {
+			$price = $sign * $object->lines[$i]->subprice;
+			if($conf->multidevises->enabled) {
+				$priceRated=$price * $object->rate;
+				return price(round($priceRated, 2), 0, $outputlangs);
+			}
+			else
+				return price($price, 0, $outputlangs);
+		}
 	}
 }
 
@@ -1337,7 +1345,13 @@ function pdf_getlineupwithtax($object,$i,$outputlangs,$hidedetails=0)
 	}
 	else
 	{
-		if (empty($hidedetails) || $hidedetails > 1) return price(($object->lines[$i]->subprice) + ($object->lines[$i]->subprice)*($object->lines[$i]->tva_tx)/100, 0, $outputlangs);
+		if (empty($hidedetails) || $hidedetails > 1) {
+			$priceAT=($object->lines[$i]->subprice) + ($object->lines[$i]->subprice)*($object->lines[$i]->tva_tx)/100;
+			if($conf->multidevises->enabled)
+				return price(round($priceAT, 2), 0, $outputlangs);
+			else
+				return price($priceAT, 0, $outputlangs);
+		}
 	}
 }
 
@@ -1587,7 +1601,14 @@ function pdf_getlinetotalexcltax($object,$i,$outputlangs,$hidedetails=0)
 		}
 		else
 		{
-			if (empty($hidedetails) || $hidedetails > 1) return price($sign * $object->lines[$i]->total_ht, 0, $outputlangs);
+			if (empty($hidedetails) || $hidedetails > 1) {
+				$price=$sign * $object->lines[$i]->total_ht;
+				if($conf->multidevises->enabled){
+					$priceRated=$price*$object->rate;
+					return price(round($priceRated, 2), 0, $outputlangs);
+				}else
+					return price($price, 0, $outputlangs);;
+			}
 		}
 	}
 	return '';
@@ -1622,7 +1643,13 @@ function pdf_getlinetotalwithtax($object,$i,$outputlangs,$hidedetails=0)
 		}
 		else
 		{
-			if (empty($hidedetails) || $hidedetails > 1) return price(($object->lines[$i]->total_ht) + ($object->lines[$i]->total_ht)*($object->lines[$i]->tva_tx)/100, 0, $outputlangs);
+			if (empty($hidedetails) || $hidedetails > 1) {
+				$price=($object->lines[$i]->total_ht) + ($object->lines[$i]->total_ht)*($object->lines[$i]->tva_tx)/100;
+				if($conf->multidevises->enabled) 
+					return price(round($pprice * $object->rate, 2), 0, $outputlangs);
+				else
+					return price($pprice, 0, $outputlangs);
+			}
 		}
 	}
 	return '';
@@ -1692,61 +1719,64 @@ function pdf_getLinkedObjects($object,$outputlangs)
 		if ($objecttype == 'propal')
 		{
 			$outputlangs->load('propal');
-			
-			foreach($objects as $elementobject)
+			$num=count($objects);
+			for ($i=0;$i<$num;$i++)
 			{
 				$linkedobjects[$objecttype]['ref_title'] = $outputlangs->transnoentities("RefProposal");
-				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($elementobject->ref);
+				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($objects[$i]->ref);
 				$linkedobjects[$objecttype]['date_title'] = $outputlangs->transnoentities("DatePropal");
-				$linkedobjects[$objecttype]['date_value'] = dol_print_date($elementobject->date,'day','',$outputlangs);
+				$linkedobjects[$objecttype]['date_value'] = dol_print_date($objects[$i]->date,'day','',$outputlangs);
 			}
 		}
 		else if ($objecttype == 'commande')
 		{
 			$outputlangs->load('orders');
-			foreach($objects as $elementobject)
+			$num=count($objects);
+			for ($i=0;$i<$num;$i++)
 			{
 				$linkedobjects[$objecttype]['ref_title'] = $outputlangs->transnoentities("RefOrder");
-				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($elementobject->ref) . ($elementobject->ref_client ? ' ('.$objects[$i]->ref_client.')' : '');
+				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($objects[$i]->ref) . ($objects[$i]->ref_client ? ' ('.$objects[$i]->ref_client.')' : '');
 				$linkedobjects[$objecttype]['date_title'] = $outputlangs->transnoentities("OrderDate");
-				$linkedobjects[$objecttype]['date_value'] = dol_print_date($elementobject->date,'day','',$outputlangs);
+				$linkedobjects[$objecttype]['date_value'] = dol_print_date($objects[$i]->date,'day','',$outputlangs);
 			}
 		}
 		else if ($objecttype == 'contrat')
 		{
 			$outputlangs->load('contracts');
-			foreach($objects as $elementobject)
+			$num=count($objects);
+			for ($i=0;$i<$num;$i++)
 			{
 				$linkedobjects[$objecttype]['ref_title'] = $outputlangs->transnoentities("RefContract");
-				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($elementobject->ref);
+				$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($objects[$i]->ref);
 				$linkedobjects[$objecttype]['date_title'] = $outputlangs->transnoentities("DateContract");
-				$linkedobjects[$objecttype]['date_value'] = dol_print_date($elementobject->date_contrat,'day','',$outputlangs);
+				$linkedobjects[$objecttype]['date_value'] = dol_print_date($objects[$i]->date_contrat,'day','',$outputlangs);
 			}
 		}
 		else if ($objecttype == 'shipping')
 		{
 			$outputlangs->load('orders');
 			$outputlangs->load('sendings');
-			foreach($objects as $elementobject)
+			$num=count($objects);
+			for ($i=0;$i<$num;$i++)
 			{
-				$elementobject->fetchObjectLinked();
-				$order = $elementobject->linkedObjects['commande'][0];
+				$objects[$i]->fetchObjectLinked();
+				$order = $objects[$i]->linkedObjects['commande'][0];
 
 				if (! empty($object->linkedObjects['commande']))	// There is already a link to order so we show only info of shipment
 				{
 					$linkedobjects[$objecttype]['ref_title'] = $outputlangs->transnoentities("RefSending");
-					$linkedobjects[$objecttype]['ref_value'].= $outputlangs->transnoentities($elementobject->ref);
+					$linkedobjects[$objecttype]['ref_value'].= $outputlangs->transnoentities($objects[$i]->ref);
 					$linkedobjects[$objecttype]['date_title'] = $outputlangs->transnoentities("DateSending");
-					$linkedobjects[$objecttype]['date_value'].= dol_print_date($elementobject->date_delivery,'day','',$outputlangs);
+					$linkedobjects[$objecttype]['date_value'].= dol_print_date($objects[$i]->date_delivery,'day','',$outputlangs);
 				}
 				else	// We show both info of order and shipment
 				{
 					$linkedobjects[$objecttype]['ref_title'] = $outputlangs->transnoentities("RefOrder") . ' / ' . $outputlangs->transnoentities("RefSending");
 					$linkedobjects[$objecttype]['ref_value'] = $outputlangs->transnoentities($order->ref) . ($order->ref_client ? ' ('.$order->ref_client.')' : '');
-					$linkedobjects[$objecttype]['ref_value'].= ' / ' . $outputlangs->transnoentities($elementobject->ref);
+					$linkedobjects[$objecttype]['ref_value'].= ' / ' . $outputlangs->transnoentities($objects[$i]->ref);
 					$linkedobjects[$objecttype]['date_title'] = $outputlangs->transnoentities("OrderDate") . ' / ' . $outputlangs->transnoentities("DateSending");
 					$linkedobjects[$objecttype]['date_value'] = dol_print_date($order->date,'day','',$outputlangs);
-					$linkedobjects[$objecttype]['date_value'].= ' / ' . dol_print_date($elementobject->date_delivery,'day','',$outputlangs);
+					$linkedobjects[$objecttype]['date_value'].= ' / ' . dol_print_date($objects[$i]->date_delivery,'day','',$outputlangs);
 				}
 			}
 		}
@@ -1794,4 +1824,3 @@ function pdf_getSizeForImage($realpath)
 	}
 	return array('width'=>$width,'height'=>$height);
 }
-

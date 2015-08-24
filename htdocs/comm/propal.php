@@ -42,6 +42,7 @@ require_once DOL_DOCUMENT_ROOT . '/core/lib/propal.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/doleditor.class.php';
+require_once DOL_DOCUMENT_ROOT . '/core/lib/company.lib.php';
 if (! empty($conf->projet->enabled)) {
 	require_once DOL_DOCUMENT_ROOT . '/projet/class/project.class.php';
 	require_once DOL_DOCUMENT_ROOT . '/core/class/html.formprojet.class.php';
@@ -125,6 +126,22 @@ if (empty($reshook))
 
 	include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';	// Must be include, not include_once
 
+	//Update currency
+	if ($conf->multidevises->enabled && $_REQUEST['currency']) {
+		$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $_REQUEST['currency'] . "'";
+		$result = $db->query($sql);
+		$line = $db->fetch_object($result);
+		$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+					VALUES ('propal'," . $object->id . ",'" . $_REQUEST['currency'] . "'," . $line->current_rate . ")";
+		$db->query($sql);
+		$sql = "UPDATE " . MAIN_DB_PREFIX . "document_currency 
+			SET currency='" . $_REQUEST['currency'] . "', rate=" . $line->current_rate . " 
+			WHERE element_type='propal' AND element_id=" . $object->id;
+		$db->query($sql);
+		header("Location:?id=" . $object->id);
+	}
+	
+	
 	// Action clone object
 	if ($action == 'confirm_clone' && $confirm == 'yes')
 	{
@@ -502,6 +519,17 @@ if (empty($reshook))
 
 				if ($id > 0)
 				{
+					//MAJ doc currency
+					if ($conf->multidevises->enabled) {
+						$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $_POST['currency'] . "'";
+						$result = $db->query($sql);
+						$line = $db->fetch_object($result);
+						$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+								VALUES ('propal',$id,'" . $_POST['currency'] . "'," . $line->current_rate . ")";
+						$db->query($sql);
+					}
+					
+					
 					// Insertion contact par defaut si defini
 					if (GETPOST('contactid') > 0)
 					{
@@ -2036,13 +2064,42 @@ if ($action == 'create')
 	// Other attributes
 	$cols = 3;
 	include DOL_DOCUMENT_ROOT . '/core/tpl/extrafields_view.tpl.php';
+	
+	if ($conf->multidevises->enabled) {
+		print '<tr><td height="10" width="25%">';
+		print '<table width="100%" class="nobordernopadding"><tr><td>';
+		print $langs->trans('Currency');
+		print '<td><td align="right">';
+		if ($action != 'editcurrency')
+			print '<a href="' . DOL_URL_ROOT . '/comm/propal.php?id=' . $object->id . '&action=editcurrency">' . img_edit() . '</a>';
+		else
+			print '&nbsp;';
+		print '</td></tr></table>';
+		print '<td class="nowrap">';
+		if ($action == 'editcurrency') {
+			print $form->selectCurrency($object->currency, "currency");
+			print '<input type="button" value="Modifier" class="button" onclick="location.href=\'?id=' . $object->id . '&currency=\'+$(\'#currency\').val();"/>';
+			//print '<script>$("#currency").on("change",function(){location.href="?id=' . $object -> id . '&currency="+$(this).val();});</script>';
+		} else {
+			print '<strong>' . currency_name($object->currency) . ' (' . $langs->getCurrencySymbol($object->currency) . ')' . '</strong>';
+		}
+		print '</td>';
+		print '<td class="nowrap"><strong>' . currency_name($conf->currency) . ' (' . $langs->getCurrencySymbol($conf->currency) . ')</strong></td>';
+
+		print '</tr>';
+	}
 
 	// Amount HT
 	print '<tr><td height="10" width="25%">' . $langs->trans('AmountHT') . '</td>';
-	print '<td class="nowrap" colspan="2">' . price($object->total_ht, '', $langs, 0, - 1, - 1, $conf->currency) . '</td>';
+	if ($conf->multidevises->enabled) {
+		print '<td class="nowrap right">' . price($object->total_ht_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_ht, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
 
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_ht, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
 	// Margin Infos
-	if (! empty($conf->margin->enabled)) {
+	if (!empty($conf->margin->enabled)) {
 		print '<td valign="top" width="50%" rowspan="4">';
 		$object->displayMarginInfos();
 		print '</td>';
@@ -2051,26 +2108,54 @@ if ($action == 'create')
 
 	// Amount VAT
 	print '<tr><td height="10">' . $langs->trans('AmountVAT') . '</td>';
-	print '<td class="nowrap" colspan="2">' . price($object->total_tva, '', $langs, 0, - 1, - 1, $conf->currency) . '</td>';
+	if ($conf->multidevises->enabled) {
+
+		print '<td class="nowrap right">' . price($object->total_tva_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_tva, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_tva, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
+	//print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 	print '</tr>';
 
 	// Amount Local Taxes
-	if ($mysoc->localtax1_assuj == "1" || $object->total_localtax1 != 0) 	// Localtax1
+	if ($mysoc->localtax1_assuj == "1" || $object->total_localtax1 != 0)// Localtax1
 	{
 		print '<tr><td height="10">' . $langs->transcountry("AmountLT1", $mysoc->country_code) . '</td>';
-		print '<td class="nowrap" colspan="2">' . price($object->total_localtax1, '', $langs, 0, - 1, - 1, $conf->currency) . '</td>';
+		if ($conf->multidevises->enabled) {
+
+			print '<td class="nowrap right">' . price(round($object->total_localtax1 * $object->rate, 2), '', $langs, 0, -1, -1, $object->currency) . '</td>';
+			print '<td class="nowrap right">' . price($object->total_localtax1, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object->total_localtax1, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 		print '<td></td></tr>';
 	}
-	if ($mysoc->localtax2_assuj == "1" || $object->total_localtax2 != 0) 	// Localtax2
+	if ($mysoc->localtax2_assuj == "1" || $object->total_localtax2 != 0)// Localtax2
 	{
 		print '<tr><td height="10">' . $langs->transcountry("AmountLT2", $mysoc->country_code) . '</td>';
-		print '<td class="nowrap" colspan="2">' . price($object->total_localtax2, '', $langs, 0, - 1, - 1, $conf->currency) . '</td>';
+		if ($conf->multidevises->enabled) {
+
+			print '<td class="nowrap right">' . price(round($object->total_localtax2 * $object->rate, 2), '', $langs, 0, -1, -1, $object->currency) . '</td>';
+			print '<td class="nowrap right">' . price($object->total_localtax2, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object->total_localtax2, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 		print '</tr>';
 	}
 
 	// Amount TTC
 	print '<tr><td height="10">' . $langs->trans('AmountTTC') . '</td>';
-	print '<td class="nowrap" colspan="2">' . price($object->total_ttc, '', $langs, 0, - 1, - 1, $conf->currency) . '</td>';
+	if ($conf->multidevises->enabled) {
+
+		print '<td class="nowrap right">' . price($object->total_ttc_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_ttc, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_ttc, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
+	//print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 	print '</tr>';
 
 	// Statut

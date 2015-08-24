@@ -109,6 +109,7 @@ $coldisplay=-1; // We remove first td
 	<?php } ?>
 
 	<?php
+	
 	$coldisplay++;
 	if ($this->situation_counter == 1 || !$this->situation_cycle_ref) {
 		print '<td align="right">' . $form->load_tva('tva_tx',$line->tva_tx,$seller,$buyer,0,$line->info_bits,$line->product_type) . '</td>';
@@ -120,6 +121,21 @@ $coldisplay=-1; // We remove first td
 	print '<td align="right"><input type="text" class="flat" size="8" id="price_ht" name="price_ht" value="' . (isset($line->pu_ht)?price($line->pu_ht,0,'',0):price($line->subprice,0,'',0)) . '"';
 	if ($this->situation_counter > 1) print ' readonly';
 	print '></td>';
+	
+	if ($conf -> multidevises -> enabled) {
+	 	$coldisplay++;
+		print '<td align="right"><input type="text" class="flat" size="8" id="price_ht_curr" name="price_ht_curr" value="' . (isset($line -> pu_ht) ? price(round($line -> pu_ht * $object -> rate, 2), 0, '', 0) : price(round($line -> subprice * $object -> rate, 2), 0, '', 0)) . '"';
+		if ($this -> situation_counter > 1)
+			print ' readonly';
+		print '><script>
+			$(\'#price_ht_curr\').on(\'keyup\',function() {
+			$(\'#price_ht\').val(Math.round(100*$(\'#price_ht_curr\').val()/' . $object -> rate . ')/100);
+			});
+			$(\'#price_ht\').on(\'keyup\',function() {
+			$(\'#price_ht_curr\').val(Math.round(100*$(\'#price_ht\').val()*' . $object -> rate . ')/100);
+			});
+			</script></td>';
+	}
 
 	if ($inputalsopricewithtax)
 	{

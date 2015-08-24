@@ -146,6 +146,13 @@ class Commande extends CommonOrder
     // Pour board
     var $nbtodo;
     var $nbtodolate;
+	
+	// Multidevises
+	var $currency;
+	var $rate;
+	var $total_ht_curr;
+	var $total_tva_curr;
+	var $total_ttc_curr;
 
     /**
      * ERR Not engouch stock
@@ -1570,6 +1577,19 @@ class Commande extends CommonOrder
                 {
                     return -3;
                 }
+				
+				if ($conf->multidevises->enabled) {
+					$sql = "SELECT currency, rate FROM " . MAIN_DB_PREFIX . "document_currency 
+					WHERE element_type='command' AND element_id=" . $this->id;
+					$result = $this->db->query($sql);
+					$doccur = $this->db->fetch_object($result);
+					if ($doccur) {
+						$this->currency = $doccur->currency;
+						$this->rate = $doccur->rate;
+						$this->updateTotalHTCurrency();
+					}
+				}
+				
                 return 1;
             }
             else
@@ -1584,6 +1604,21 @@ class Commande extends CommonOrder
             return -1;
         }
     }
+
+	/*
+	 * Calculating totals according to rate
+	 */
+	private function updateTotalHTCurrency() {
+		$this->total_ht_curr = 0;
+		$this->total_tva_curr = 0;
+		$this->total_ttc_curr = 0;
+		foreach ($this->lines as $line) {
+			$this->total_ht_curr += round($line->total_ht * $this->rate, 2);
+			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
+			$this->total_ttc_curr += round($line->total_ttc * $this->rate, 2);
+		}
+
+	}
 
 
     /**
