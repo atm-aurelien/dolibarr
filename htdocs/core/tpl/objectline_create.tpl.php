@@ -517,6 +517,12 @@ jQuery(document).ready(function() {
 	{
 		setforpredef();
 		jQuery('#trlinefordates').show();
+		
+		<?php if($conf->multidevises->enabled) { ?>
+		$('#price_ht_curr').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-price-<?php echo $object->currency ?>'));
+		$('#tva_tx').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-vat-<?php echo $object->currency ?>'));
+		$('#price_ht').val(Math.round(100*$('#price_ht_curr').val()/<?php echo $object->rate ?>)/100);
+		<?php } ?>
 
 		<?php
 		if (! empty($usemargins) && $user->rights->margins->creer)

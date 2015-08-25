@@ -207,6 +207,9 @@ class Product extends CommonObject
 	 * @var string
 	 */
 	public $fk_unit;
+	
+	//Currency
+	public $currency;
 
 	/**
 	 * Regular product
@@ -243,6 +246,7 @@ class Product extends CommonObject
 		$this->desiredstock = 0;
 		$this->canvas = '';
 		$this->status_batch=0;
+		$this->currency = $conf->currency;
 	}
 
 	/**
@@ -1193,13 +1197,17 @@ class Product extends CommonObject
 
 		// Add new price
 		$sql = "INSERT INTO ".MAIN_DB_PREFIX."product_price(price_level,date_price,fk_product,fk_user_author,price,price_ttc,price_base_type,tosell,tva_tx,recuperableonly,";
-		$sql.= " localtax1_tx, localtax2_tx, price_min,price_min_ttc,price_by_qty,entity,fk_price_expression) ";
+		$sql.= " localtax1_tx, localtax2_tx, price_min,price_min_ttc,price_by_qty,entity,fk_price_expression, currency) ";
 		$sql.= " VALUES(".($level?$level:1).", '".$this->db->idate($now)."',".$this->id.",".$user->id.",".$this->price.",".$this->price_ttc.",'".$this->price_base_type."',".$this->status.",".$this->tva_tx.",".$this->tva_npr.",";
 		$sql.= " ".$this->localtax1_tx.",".$this->localtax2_tx.",".$this->price_min.",".$this->price_min_ttc.",".$this->price_by_qty.",".$conf->entity.",".($this->fk_price_expression > 0?$this->fk_price_expression:'null');
-		$sql.= ")";
+		$sql.= ", '".$this->currency."')";
+		
 
 		dol_syslog(get_class($this)."::_log_price", LOG_DEBUG);
 		$resql=$this->db->query($sql);
+		
+
+		
 		if(! $resql)
 		{
 			$this->error=$this->db->lasterror();
@@ -1426,22 +1434,60 @@ class Product extends CommonObject
 
 			// Ne pas mettre de quote sur les numeriques decimaux.
 			// Ceci provoque des stockages avec arrondis en base au lieu des valeurs exactes.
-			$sql = "UPDATE ".MAIN_DB_PREFIX."product SET";
-			$sql.= " price_base_type='".$newpricebase."',";
-			$sql.= " price=".$price.",";
-			$sql.= " price_ttc=".$price_ttc.",";
-			$sql.= " price_min=".$price_min.",";
-			$sql.= " price_min_ttc=".$price_min_ttc.",";
-			$sql.= " localtax1_tx=".($localtax1>=0?$localtax1:'NULL').",";
-			$sql.= " localtax2_tx=".($localtax2>=0?$localtax2:'NULL').",";
-			$sql.= " tva_tx='".price2num($newvat)."',";
-            $sql.= " recuperableonly='".$newnpr."'";
-			$sql.= " WHERE rowid = ".$id;
-
-			dol_syslog(get_class($this)."::update_price", LOG_DEBUG);
-			$resql=$this->db->query($sql);
-			if ($resql)
-			{
+			// Multidevises : ne met à jour le prix que si la devise choisie est celle de l'application 
+			if(!$conf->multidevises->enabled || $conf->currency==$this->currency) {
+				$sql = "UPDATE ".MAIN_DB_PREFIX."product SET";
+				$sql.= " price_base_type='".$newpricebase."',";
+				$sql.= " price=".$price.",";
+				$sql.= " price_ttc=".$price_ttc.",";
+				$sql.= " price_min=".$price_min.",";
+				$sql.= " price_min_ttc=".$price_min_ttc.",";
+				$sql.= " localtax1_tx=".($localtax1>=0?$localtax1:'NULL').",";
+				$sql.= " localtax2_tx=".($localtax2>=0?$localtax2:'NULL').",";
+				$sql.= " tva_tx='".price2num($newvat)."',";
+	            $sql.= " recuperableonly='".$newnpr."'";
+				$sql.= " WHERE rowid = ".$id;
+	
+				dol_syslog(get_class($this)."::update_price", LOG_DEBUG);
+				$resql=$this->db->query($sql);
+				if ($resql)
+				{
+					$this->price = $price;
+					$this->price_ttc = $price_ttc;
+					$this->price_min = $price_min;
+					$this->price_min_ttc = $price_min_ttc;
+					$this->price_base_type = $newpricebase;
+					$this->tva_tx = $newvat;
+					$this->tva_npr = $newnpr;
+					//Local taxes
+					$this->localtax1_tx = $localtax1;
+					$this->localtax2_tx = $localtax2;
+	
+					// Price by quantity
+					$this->price_by_qty = $newpsq;
+	
+					$this->_log_price($user,$level);	// Save price for level into table product_price
+	
+					$this->level = $level;				// Store level of price edited for trigger
+	
+	                // Call trigger
+	                $result=$this->call_trigger('PRODUCT_PRICE_MODIFY',$user);
+	                if ($result < 0)
+	                {
+	                	$this->db->rollback();
+	                	return -1;
+	                }
+	                // End call triggers
+	
+	                $this->db->commit();
+				}
+				else
+				{
+					$this->db->rollback();
+				    dol_print_error($this->db);
+				}
+			}
+			else {
 				$this->price = $price;
 				$this->price_ttc = $price_ttc;
 				$this->price_min = $price_min;
@@ -1456,26 +1502,12 @@ class Product extends CommonObject
 				// Price by quantity
 				$this->price_by_qty = $newpsq;
 
-				$this->_log_price($user,$level);	// Save price for level into table product_price
+				$this->_log_price($user,$level);
+				
+				$this->db->commit();
 
-				$this->level = $level;				// Store level of price edited for trigger
-
-                // Call trigger
-                $result=$this->call_trigger('PRODUCT_PRICE_MODIFY',$user);
-                if ($result < 0)
-                {
-                	$this->db->rollback();
-                	return -1;
-                }
-                // End call triggers
-
-                $this->db->commit();
 			}
-			else
-			{
-				$this->db->rollback();
-			    dol_print_error($this->db);
-			}
+			
 		}
 
 		return 1;
@@ -1644,7 +1676,7 @@ class Product extends CommonObject
 					for ($i=1; $i <= $conf->global->PRODUIT_MULTIPRICES_LIMIT; $i++)
 					{
 						$sql = "SELECT price, price_ttc, price_min, price_min_ttc,";
-						$sql.= " price_base_type, tva_tx, tosell, price_by_qty, rowid, recuperableonly";
+						$sql.= " price_base_type, tva_tx, tosell, price_by_qty, rowid, recuperableonly, currency";
 						$sql.= " FROM ".MAIN_DB_PREFIX."product_price";
 						$sql.= " WHERE entity IN (".getEntity('productprice', 1).")";
 						$sql.= " AND price_level=".$i;

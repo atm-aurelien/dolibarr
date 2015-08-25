@@ -1596,6 +1596,7 @@ class Form
 		{
 			$sql.= ", (SELECT pp.rowid FROM ".MAIN_DB_PREFIX."product_price as pp WHERE pp.fk_product = p.rowid";
 			if ($price_level >= 1 && !empty($conf->global->PRODUIT_MULTIPRICES)) $sql.= " AND price_level=".$price_level;
+			if ($conf->multidevises->enabled) $sql .= " AND currency='".$conf->currency."'";
 			$sql.= " ORDER BY date_price";
 			$sql.= " DESC LIMIT 1) as price_rowid";
 			$sql.= ", (SELECT pp.price_by_qty FROM ".MAIN_DB_PREFIX."product_price as pp WHERE pp.fk_product = p.rowid";
@@ -1670,7 +1671,7 @@ class Form
             	$opt = '';
 				$optJson = array();
 				$objp = $this->db->fetch_object($result);
-
+				
 				if (!empty($objp->price_by_qty) && $objp->price_by_qty == 1 && !empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY))
 				{ // Price by quantity will return many prices for the same product
 					$sql = "SELECT rowid, quantity, price, unitprice, remise_percent, remise";
@@ -1787,6 +1788,28 @@ class Form
         $opt = '<option value="'.$objp->rowid.'"';
         $opt.= ($objp->rowid == $selected)?' selected':'';
 		$opt.= (!empty($objp->price_by_qty_rowid) && $objp->price_by_qty_rowid > 0)?' pbq="'.$objp->price_by_qty_rowid.'"':'';
+		
+		if($conf->multidevises->enabled) {
+			$sql = "SELECT * FROM (SELECT p.price, p.currency, p.tva_tx";
+			$sql .= " FROM " . MAIN_DB_PREFIX . "product_price as p,";
+			$sql .= " " . MAIN_DB_PREFIX . "user as u";
+			$sql .= " WHERE fk_product = " . $objp->rowid;
+			$sql .= " AND p.entity IN (" . getEntity('productprice', 1) . ")";
+			$sql .= " AND p.fk_user_author = u.rowid";
+			if (! empty($socid) && ! empty($conf->global->PRODUIT_MULTIPRICES)) $sql .= " AND p.price_level = " . $soc->price_level;
+			$sql .= " ORDER BY p.rowid DESC)";
+			$sql .= " AS t GROUP BY currency";
+			
+			$result2 = $this->db->query($sql);
+            if ($result2)
+            {
+            	while($objp2 = $this->db->fetch_object($result2)) {
+                	$opt.= ' data-price-'.$objp2->currency.'="'.price2num($objp2->price).'"';
+					$opt.= ' data-vat-'.$objp2->currency.'="'.price2num($objp2->tva_tx).'"';	
+				}
+			}
+		}
+		
         if (! empty($conf->stock->enabled) && $objp->fk_product_type == 0 && isset($objp->stock))
         {
 			if ($objp->stock > 0) $opt.= ' class="product_line_stock_ok"';
@@ -1809,6 +1832,7 @@ class Form
             $sql.= " WHERE fk_product='".$objp->rowid."'";
             $sql.= " AND entity IN (".getEntity('productprice', 1).")";
             $sql.= " AND price_level=".$price_level;
+			if($conf->multidevises->enabled) $sql .= " AND currency='".$conf->currency."'";
             $sql.= " ORDER BY date_price";
             $sql.= " DESC LIMIT 1";
 

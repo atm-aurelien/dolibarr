@@ -1239,7 +1239,7 @@ if (empty($reshook))
 		else
 		{
 			$idprod=GETPOST('idprod', 'int');
-			$tva_tx = '';
+			$tva_tx = (GETPOST('tva_tx') ? GETPOST('tva_tx') : '');
 		}
 
 		$qty = GETPOST('qty' . $predef);
@@ -1312,7 +1312,7 @@ if (empty($reshook))
 				$label = ((GETPOST('product_label') && GETPOST('product_label') != $prod->label) ? GETPOST('product_label') : '');
 
 				// Update if prices fields are defined
-					$tva_tx = get_default_tva($mysoc, $object->thirdparty, $prod->id);
+					$tva_tx = $tva_tx ? $tva_tx : get_default_tva($mysoc, $object->thirdparty, $prod->id);
 					$tva_npr = get_default_npr($mysoc, $object->thirdparty, $prod->id);
 					$pu_ht = $prod->price;
 					$pu_ttc = $prod->price_ttc;

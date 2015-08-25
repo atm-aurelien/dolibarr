@@ -128,6 +128,11 @@ ALTER TABLE llx_product_fournisseur_price ADD COLUMN fk_supplier_price_expressio
 ALTER TABLE llx_product ADD COLUMN fk_price_expression integer DEFAULT NULL;
 ALTER TABLE llx_product_price ADD COLUMN fk_price_expression integer DEFAULT NULL;
 
+ALTER TABLE llx_product_price ADD COLUMN currency varchar(3) DEFAULT NULL;
+ALTER TABLE llx_product_price_bt_qty ADD COLUMN currency varchar(3) DEFAULT NULL;
+UPDATE llx_product_price SET currency=(SELECT value FROM llx_const WHERE name='MAIN_MONNAIE') WHERE currency IS NULL OR currency='';
+UPDATE llx_product_price_bt_qty SET currency=(SELECT value FROM llx_const WHERE name='MAIN_MONNAIE') WHERE currency IS NULL OR currency='';
+
 ALTER TABLE llx_product ADD COLUMN fifo double(24,8) after pmp;
 ALTER TABLE llx_product ADD COLUMN lifo double(24,8) after fifo;
 
