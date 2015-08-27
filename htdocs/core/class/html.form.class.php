@@ -1983,7 +1983,7 @@ class Form
 	 *  @param	int		$hidelabel		Hide label (0=no, 1=yes)
      *	@return	void
      */
-    function select_produits_fournisseurs($socid, $selected='', $htmlname='productid', $filtertype='', $filtre='', $ajaxoptions=array(), $hidelabel=0)
+    function select_produits_fournisseurs($socid, $selected='', $htmlname='productid', $filtertype='', $filtre='', $ajaxoptions=array(), $hidelabel=0, $object=null)
     {
         global $langs,$conf;
         global $price_level, $status, $finished;
@@ -1997,7 +1997,7 @@ class Form
         }
         else
         {
-            print $this->select_produits_fournisseurs_list($socid,$selected,$htmlname,$filtertype,$filtre,'',-1,0);
+            print $this->select_produits_fournisseurs_list($socid,$selected,$htmlname,$filtertype,$filtre,'',-1,0, 100, $object);
         }
     }
 
@@ -2015,7 +2015,7 @@ class Form
      *  @param  int     $limit          Limit of line number
      *  @return array           		Array of keys for json
      */
-    function select_produits_fournisseurs_list($socid,$selected='',$htmlname='productid',$filtertype='',$filtre='',$filterkey='',$statut=-1,$outputmode=0,$limit=100)
+    function select_produits_fournisseurs_list($socid,$selected='',$htmlname='productid',$filtertype='',$filtre='',$filterkey='',$statut=-1,$outputmode=0,$limit=100, $object=null)
     {
         global $langs,$conf,$db;
 
@@ -2025,17 +2025,21 @@ class Form
         $langs->load('stocks');
 
         $sql = "SELECT p.rowid, p.label, p.ref, p.price, p.duration,";
-        $sql.= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.quantity, pfp.remise_percent, pfp.remise, pfp.unitprice,";
+        $sql.= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.quantity, pfp.remise_percent, pfp.remise, pfp.unitprice, pfp.currency,";
         $sql.= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, s.nom as name";
         $sql.= " FROM ".MAIN_DB_PREFIX."product as p";
         $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON p.rowid = pfp.fk_product";
         if ($socid) $sql.= " AND pfp.fk_soc = ".$socid;
         $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON pfp.fk_soc = s.rowid";
         $sql.= " WHERE p.entity IN (".getEntity('product', 1).")";
+		if($conf->multidevises->enabled)
+			$sql.= " AND (pfp.currency IS NULL OR pfp.currency='' OR pfp.currency='".$conf->currency."' OR pfp.currency='".$object->currency."')";
         $sql.= " AND p.tobuy = 1";
         if (strval($filtertype) != '') $sql.=" AND p.fk_product_type=".$filtertype;
         if (! empty($filtre)) $sql.=" ".$filtre;
         // Add criteria on ref/label
+        
+        
         if ($filterkey != '')
         {
         	$sql.=' AND (';
@@ -2084,6 +2088,10 @@ class Form
 				$outdiscount=0;
 
                 $opt = '<option value="'.$objp->idprodfournprice.'"';
+				if($conf->multidevises->enabled) {
+					$opt.=' data-price-'.$objp->currency.'="'.price2num($objp->unitprice).'"';
+					$opt.=' data-vat-'.$objp->currency.'="'.$objp->tva_tx.'"';
+				}
                 if ($selected && $selected == $objp->idprodfournprice) $opt.= ' selected';
                 if (empty($objp->idprodfournprice)) $opt.=' disabled';
                 $opt.= '>';
@@ -2123,8 +2131,8 @@ class Form
                     }
                     if ($objp->quantity == 1)
                     {
-	                    $opt.= price($objp->fprice,1,$langs,0,0,-1,$conf->currency)."/";
-                    	$outval.= price($objp->fprice,0,$langs,0,0,-1,$conf->currency)."/";
+	                    $opt.= price($objp->fprice,1,$langs,0,0,-1,($objp->currency?$objp->currency:$conf->currency))."/";
+                    	$outval.= price($objp->fprice,0,$langs,0,0,-1,($objp->currency?$objp->currency:$conf->currency))."/";
                     	$opt.= $langs->trans("Unit");	// Do not use strtolower because it breaks utf8 encoding
                         $outval.=$langs->transnoentities("Unit");
                     }
@@ -2138,8 +2146,8 @@ class Form
 
                     if ($objp->quantity >= 1)
                     {
-                        $opt.=" (".price($objp->unitprice,1,$langs,0,0,-1,$conf->currency)."/".$langs->trans("Unit").")";	// Do not use strtolower because it breaks utf8 encoding
-                        $outval.=" (".price($objp->unitprice,0,$langs,0,0,-1,$conf->currency)."/".$langs->transnoentities("Unit").")";	// Do not use strtolower because it breaks utf8 encoding
+                        $opt.=" (".price($objp->unitprice,1,$langs,0,0,-1,($objp->currency?$objp->currency:$conf->currency))."/".$langs->trans("Unit").")";	// Do not use strtolower because it breaks utf8 encoding
+                        $outval.=" (".price($objp->unitprice,0,$langs,0,0,-1,($objp->currency?$objp->currency:$conf->currency))."/".$langs->transnoentities("Unit").")";	// Do not use strtolower because it breaks utf8 encoding
                     }
 					if ($objp->remise_percent >= 1)
                     {

@@ -59,7 +59,7 @@ if($object->currency!=$conf->currency) $colspan++;
 	<td align="right"><span id="title_vat"><?php echo $langs->trans('VAT'); ?></span></td>
 	<td align="right"><span id="title_up_ht"><?php echo $langs->trans('PriceUHT'); ?></span></td>
 	<?php if($conf->multidevises->enabled && $object->currency!=$conf->currency) { ?>
-		<td align="right"><span id="title_up_ht"><?php echo $langs->trans('PriceUHT') . ' ' . $langs->getCurrencySymbol($object->currency); ?></span></td>
+		<td align="right"><span id="title_up_ht_curr"><?php echo $langs->trans('PriceUHT') . ' ' . $langs->getCurrencySymbol($object->currency); ?></span></td>
 	<?php } ?>
 	<?php if (! empty($inputalsopricewithtax)) { ?>
 	<td align="right"><span id="title_up_ttc"><?php echo $langs->trans('PriceUTTC'); ?></span></td>
@@ -183,7 +183,7 @@ else {
 					'option_disabled' => 'addPredefinedProductButton',	// html id to disable once select is done
 					'warning' => $langs->trans("NoPriceDefinedForThisSupplier") // translation of an error saved into var 'error'
 			);
-			$form->select_produits_fournisseurs($object->socid, GETPOST('idprodfournprice'), 'idprodfournprice', '', '', $ajaxoptions, 1);
+			$form->select_produits_fournisseurs($object->socid, GETPOST('idprodfournprice'), 'idprodfournprice', '', '', $ajaxoptions, 1, $object);
 		}
 		echo '</span>';
 	}
@@ -519,9 +519,16 @@ jQuery(document).ready(function() {
 		jQuery('#trlinefordates').show();
 		
 		<?php if($conf->multidevises->enabled) { ?>
-		$('#price_ht_curr').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-price-<?php echo $object->currency ?>'));
+		if($(this).find('option[value="'+$(this).val()+'"][data-price-<?php echo $object->currency ?>]').length) {
+			$('#price_ht_curr').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-price-<?php echo $object->currency ?>'));
+			$('#price_ht').val(Math.round(100*$('#price_ht_curr').val()/<?php echo $object->rate ?>)/100);		
+		}
+		if($(this).find('option[value="'+$(this).val()+'"][data-price-<?php echo $conf->currency ?>]').length) {
+			$('#price_ht').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-price-<?php echo $conf->currency ?>'));
+			$('#price_ht_curr').val(Math.round(100*$('#price_ht').val()*<?php echo $object->rate ?>)/100);		
+		}
 		$('#tva_tx').val($(this).find('option[value="'+$(this).val()+'"]').attr('data-vat-<?php echo $object->currency ?>'));
-		$('#price_ht').val(Math.round(100*$('#price_ht_curr').val()/<?php echo $object->rate ?>)/100);
+		
 		<?php } ?>
 
 		<?php
@@ -553,6 +560,9 @@ jQuery(document).ready(function() {
 
 		        		options += '<option value="'+this.id+'" price="'+this.price+'"';
 		        		if (this.price > 0 && i == 1) { defaultkey = this.id; defaultprice = this.price; }
+		        		<?php if($conf->multidevises->enabled){ ?>
+		        		if (this.currency=='<?php echo $object->currency ?>' && !defaultkey) { defaultkey = this.id; defaultprice = this.price; }
+		        		<?php } ?>
 		        		options += '>'+this.label+'</option>';
 		      		}
 	      			if (this.id == 'pmpprice')
@@ -620,6 +630,8 @@ function setforfree() {
 	jQuery("#prod_entry_mode_free").prop('checked',true);
 	jQuery("#prod_entry_mode_predef").prop('checked',false);
 	jQuery("#price_ht").show();
+	<?php if($conf->multidevises->enabled) { ?>jQuery("#price_ht_curr").show();<?php } ?>
+	<?php if($conf->multidevises->enabled) { ?>jQuery("#title_up_ht_curr").show();<?php } ?>
 	jQuery("#price_ttc").show();	// May no exists
 	jQuery("#tva_tx").show();
 	jQuery("#buying_price").val('').show();
@@ -638,7 +650,9 @@ function setforpredef() {
 	jQuery("#prod_entry_mode_free").prop('checked',false);
 	jQuery("#prod_entry_mode_predef").prop('checked',true);
 	jQuery("#price_ht").hide();
+	<?php if($conf->multidevises->enabled) { ?>jQuery("#price_ht_curr").hide();<?php } ?>
 	jQuery("#title_up_ht").hide();
+	<?php if($conf->multidevises->enabled) { ?>jQuery("#title_up_ht_curr").hide();<?php } ?>
 	jQuery("#price_ttc").hide();	// May no exists
 	jQuery("#tva_tx").hide();
 	jQuery("#buying_price").show();

@@ -399,7 +399,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 
 					// Unit price before discount
 					$pdf->SetXY($this->posxup, $curY);
-					$pdf->MultiCell($this->posxqty-$this->posxup-0.8, 3, price($object->lines[$i]->subprice), 0, 'R', 0);
+					if($conf->multidevises->enabled)
+						$pdf->MultiCell($this->posxqty-$this->posxup-0.8, 3, price(round($object->lines[$i]->subprice*$object->rate,2)), 0, 'R', 0);
+					else
+						$pdf->MultiCell($this->posxqty-$this->posxup-0.8, 3, price($object->lines[$i]->subprice), 0, 'R', 0);
 
 					// Quantity
 					$pdf->SetXY($this->posxqty, $curY);
@@ -487,11 +490,11 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 						$pdf->setPage($pagenb);
 						if ($pagenb == 1)
 						{
-							$this->_tableau($pdf, $tab_top, $this->page_hauteur - $tab_top - $heightforfooter, 0, $outputlangs, 0, 1);
+							$this->_tableau($pdf, $object, $tab_top, $this->page_hauteur - $tab_top - $heightforfooter, 0, $outputlangs, 0, 1);
 						}
 						else
 						{
-							$this->_tableau($pdf, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforfooter, 0, $outputlangs, 1, 1);
+							$this->_tableau($pdf, $object, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforfooter, 0, $outputlangs, 1, 1);
 						}
 						$this->_pagefoot($pdf,$object,$outputlangs,1);
 						$pagenb++;
@@ -503,11 +506,11 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 					{
 						if ($pagenb == 1)
 						{
-							$this->_tableau($pdf, $tab_top, $this->page_hauteur - $tab_top - $heightforfooter, 0, $outputlangs, 0, 1);
+							$this->_tableau($pdf, $object, $tab_top, $this->page_hauteur - $tab_top - $heightforfooter, 0, $outputlangs, 0, 1);
 						}
 						else
 						{
-							$this->_tableau($pdf, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforfooter, 0, $outputlangs, 1, 1);
+							$this->_tableau($pdf, $object, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforfooter, 0, $outputlangs, 1, 1);
 						}
 						$this->_pagefoot($pdf,$object,$outputlangs,1);
 						// New page
@@ -521,12 +524,12 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 				// Show square
 				if ($pagenb == 1)
 				{
-					$this->_tableau($pdf, $tab_top, $this->page_hauteur - $tab_top - $heightforinfotot - $heightforfreetext - $heightforfooter, 0, $outputlangs, 0, 0);
+					$this->_tableau($pdf, $object, $tab_top, $this->page_hauteur - $tab_top - $heightforinfotot - $heightforfreetext - $heightforfooter, 0, $outputlangs, 0, 0);
 					$bottomlasttab=$this->page_hauteur - $heightforinfotot - $heightforfreetext - $heightforfooter + 1;
 				}
 				else
 				{
-					$this->_tableau($pdf, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforinfotot - $heightforfreetext - $heightforfooter, 0, $outputlangs, 1, 0);
+					$this->_tableau($pdf, $object, $tab_top_newpage, $this->page_hauteur - $tab_top_newpage - $heightforinfotot - $heightforfreetext - $heightforfooter, 0, $outputlangs, 1, 0);
 					$bottomlasttab=$this->page_hauteur - $heightforinfotot - $heightforfreetext - $heightforfooter + 1;
 				}
 
@@ -692,7 +695,11 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 		$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalHT"), 0, 'L', 1);
 
 		$pdf->SetXY($col2x, $tab2_top + 0);
-		$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_ht + (! empty($object->remise)?$object->remise:0)), 0, 'R', 1);
+		$price_ht=$object->total_ht + (! empty($object->remise)?$object->remise:0);
+		if($conf->multidevises->enabled)
+			$pdf->MultiCell($largcol2, $tab2_hl, price(round($price_ht*$object->rate,2)), 0, 'R', 1);
+		else
+			$pdf->MultiCell($largcol2, $tab2_hl, price($price_ht), 0, 'R', 1);
 
 		// Show VAT by rates and total
 		$pdf->SetFillColor(248,248,248);
@@ -720,7 +727,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 				$pdf->MultiCell($col2x-$col1x, $tab2_hl, $totalvat, 0, 'L', 1);
 
 				$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
-				$pdf->MultiCell($largcol2, $tab2_hl, price($tvaval), 0, 'R', 1);
+				if($conf->multidevises->enabled)
+					$pdf->MultiCell($largcol2, $tab2_hl, price(round($tvaval*$object->rate,2)), 0, 'R', 1);
+				else
+					$pdf->MultiCell($largcol2, $tab2_hl, price($tvaval), 0, 'R', 1);
 			}
 		}
 		if (! $this->atleastoneratenotnull) // If no vat at all
@@ -739,7 +749,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 				$pdf->SetXY($col1x, $tab2_top + $tab2_hl * $index);
 				$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transcountrynoentities("TotalLT1",$mysoc->country_code), 0, 'L', 1);
 				$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
-				$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_localtax1), $useborder, 'R', 1);
+				if($conf->multidevises->enabled)
+					$pdf->MultiCell($largcol2, $tab2_hl, price(round($object->total_localtax1*$object->rate,2)), 0, 'R', 1);
+				else
+					$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_localtax1), $useborder, 'R', 1);
 			}
 
 			// Total LocalTax2
@@ -749,7 +762,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 				$pdf->SetXY($col1x, $tab2_top + $tab2_hl * $index);
 				$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transcountrynoentities("TotalLT2",$mysoc->country_code), 0, 'L', 1);
 				$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
-				$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_localtax2), $useborder, 'R', 1);
+				if($conf->multidevises->enabled)
+					$pdf->MultiCell($largcol2, $tab2_hl, price(round($object->total_localtax2*$object->rate,2)), 0, 'R', 1);
+				else
+					$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_localtax2), $useborder, 'R', 1);
 			}
 		}
 		else
@@ -827,7 +843,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 		$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalTTC"), $useborder, 'L', 1);
 
 		$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
-		$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_ttc), $useborder, 'R', 1);
+		if($conf->multidevises->enabled)
+			$pdf->MultiCell($largcol2, $tab2_hl, price(round($object->total_ttc*$object->rate,2)), 0, 'R', 1);
+		else
+			$pdf->MultiCell($largcol2, $tab2_hl, price($object->total_ttc), $useborder, 'R', 1);
 		$pdf->SetFont('','', $default_font_size - 1);
 		$pdf->SetTextColor(0,0,0);
 
@@ -878,7 +897,7 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 	 *   @param		int			$hidebottom		Hide bottom bar of array
 	 *   @return	void
 	 */
-	function _tableau(&$pdf, $tab_top, $tab_height, $nexY, $outputlangs, $hidetop=0, $hidebottom=0)
+	function _tableau(&$pdf, &$object, $tab_top, $tab_height, $nexY, $outputlangs, $hidetop=0, $hidebottom=0)
 	{
 		global $conf;
 
@@ -894,7 +913,7 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 
 		if (empty($hidetop))
 		{
-			$titre = $outputlangs->transnoentities("AmountInCurrency",$outputlangs->transnoentitiesnoconv("Currency".$conf->currency));
+			$titre = $outputlangs->transnoentities("AmountInCurrency",$outputlangs->transnoentitiesnoconv("Currency".($object->currency!=$conf->currency ? $object->currency : $conf->currency)));
 			$pdf->SetXY($this->page_largeur - $this->marge_droite - ($pdf->GetStringWidth($titre) + 3), $tab_top-4);
 			$pdf->MultiCell(($pdf->GetStringWidth($titre) + 3), 2, $titre);
 
