@@ -31,6 +31,7 @@ require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT .'/core/modules/facture/modules_facture.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/payments.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 if (! empty($conf->banque->enabled)) require_once DOL_DOCUMENT_ROOT.'/compta/bank/class/account.class.php';
 
 $langs->load('bills');
@@ -203,6 +204,8 @@ print '<table class="border" width="100%">';
 // Ref
 print '<tr><td valign="top" width="20%">'.$langs->trans('Ref').'</td><td colspan="3">'.$object->id.'</td></tr>';
 
+
+
 // Date payment
 print '<tr><td valign="top">'.$form->editfieldkey("Date",'datep',$object->date,$object,$user->rights->facture->paiement).'</td><td colspan="3">';
 print $form->editfieldval("Date",'datep',$object->date,$object,$user->rights->facture->paiement,'datepicker','',null,$langs->trans('PaymentDateUpdateSucceeded'));
@@ -218,7 +221,7 @@ print $form->editfieldval("Numero",'num_paiement',$object->numero,$object,$objec
 print '</td></tr>';
 
 // Amount
-print '<tr><td valign="top">'.$langs->trans('Amount').'</td><td colspan="3">'.price($object->montant,'',$langs,0,0,-1,$conf->currency).'</td></tr>';
+print '<tr><td valign="top">'.$langs->trans('Amount').'</td><td colspan="3">'.price($object->montant,'',$langs,0,0,-1,$conf->currency).'</td></tr>';	
 
 // Note
 print '<tr><td valign="top">'.$form->editfieldkey("Note",'note',$object->note,$object,$user->rights->facture->paiement).'</td><td colspan="3">';
@@ -290,9 +293,22 @@ if ($resql)
 	print '<tr class="liste_titre">';
 	print '<td>'.$langs->trans('Bill').'</td>';
 	print '<td>'.$langs->trans('Company').'</td>';
+	if($conf->multidevises->enabled){
+		print '<td align="right">'.$langs->trans('Currency').'</td>';
+		print '<td align="right">'.$langs->trans('AppliedRate').'</td>';
+	}
 	print '<td align="right">'.$langs->trans('ExpectedToPay').'</td>';
+	if($conf->multidevises->enabled){
+		print '<td align="right">'.$langs->trans('ExpectedToPay').' '.$langs->trans('Currency').'</td>';
+	}
     print '<td align="right">'.$langs->trans('PayedByThisPayment').'</td>';
+	if($conf->multidevises->enabled){
+		print '<td align="right">'.$langs->trans('PayedByThisPayment').' '.$langs->trans('Currency').'</td>';
+	}
     print '<td align="right">'.$langs->trans('RemainderToPay').'</td>';
+	if($conf->multidevises->enabled){
+		print '<td align="right">'.$langs->trans('RemainderToPay').' '.$langs->trans('Currency').'</td>';
+	}
     print '<td align="right">'.$langs->trans('Status').'</td>';
 	print "</tr>\n";
 
@@ -318,22 +334,40 @@ if ($resql)
 			print '<td>';
 			print $invoice->getNomUrl(1);
 			print "</td>\n";
-
+			
 			// Third party
 			print '<td>';
 			$thirdpartystatic->id=$objp->socid;
 			$thirdpartystatic->name=$objp->name;
 			print $thirdpartystatic->getNomUrl(1);
 			print '</td>';
+			
+			if($conf->multidevises->enabled){
+				print '<td>';
+				print currency_name($invoice->currency);
+				print "</td>\n";
+				print '<td>';
+				print round($invoice->rate,4).' %';
+				print "</td>\n";
+			}
 
 			// Expected to pay
 			print '<td align="right">'.price($objp->total_ttc).'</td>';
+			if($conf->multidevises->enabled){
+				print '<td align="right">'.price($objp->total_ttc*$invoice->rate,0,'',1,2,2,$invoice->currency).'</td>';	
+			}
 
             // Amount payed
             print '<td align="right">'.price($objp->amount).'</td>';
+			if($conf->multidevises->enabled){
+				print '<td align="right">'.price($objp->amount*$invoice->rate,0,'',1,2,2,$invoice->currency).'</td>';	
+			}
 
             // Remain to pay
             print '<td align="right">'.price($remaintopay).'</td>';
+			if($conf->multidevises->enabled){
+				print '<td align="right">'.price($remaintopay*$invoice->rate,0,'',1,2,2,$invoice->currency).'</td>';	
+			}
 
 			// Status
 			print '<td align="right">'.$invoice->getLibStatut(5, $alreadypayed).'</td>';

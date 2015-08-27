@@ -3089,6 +3089,8 @@ else if ($id > 0 || ! empty($ref))
 	if (! empty($conf->banque->enabled))
 		print '<td align="right">' . $langs->trans('BankAccount') . '</td>';
 	print '<td align="right">' . $langs->trans('Amount') . '</td>';
+	if($conf->multidevises->enabled)
+		print '<td align="right">' . $langs->trans('Amount') . ' '.$langs->getCurrencySymbol($object->currency).'</td>';
 	print '<td width="18">&nbsp;</td>';
 	print '</tr>';
 
@@ -3135,6 +3137,8 @@ else if ($id > 0 || ! empty($ref))
 					print '</td>';
 				}
 				print '<td align="right">' . price($sign * $objp->amount) . '</td>';
+				if($conf->multidevises->enabled)
+					print '<td align="right">' . price(round($sign * $objp->amount * $object->rate,2)) . '</td>';
 				print '<td>&nbsp;</td>';
 				print '</tr>';
 				$i ++;
@@ -3156,7 +3160,10 @@ else if ($id > 0 || ! empty($ref))
 			print $langs->trans('AlreadyPaidNoCreditNotesNoDeposits');
 		else
 			print $langs->trans('AlreadyPaid');
-		print ' :</td><td align="right">' . price($totalpaye) . '</td><td>&nbsp;</td></tr>';
+		print ' :</td><td align="right">' . price($totalpaye) . '</td>';
+		if($conf->multidevises->enabled)
+			print ' :<td align="right">' . price(round($totalpaye*$object->rate,2)) . '</td>';
+		print'<td>&nbsp;</td></tr>';
 
 		$resteapayeraffiche = $resteapayer;
 
@@ -3185,6 +3192,8 @@ else if ($id > 0 || ! empty($ref))
 				print $invoice->getNomUrl(0);
 				print ' :</td>';
 				print '<td align="right">' . price($obj->amount_ttc) . '</td>';
+				if($conf->multidevises->enabled)
+					print '<td align="right">' . price(round($obj->amount_ttc*$object->rate,2)) . '</td>';
 				print '<td align="right">';
 				print '<a href="' . $_SERVER["PHP_SELF"] . '?facid=' . $object->id . '&action=unlinkdiscount&discountid=' . $obj->rowid . '">' . img_delete() . '</a>';
 				print '</td></tr>';
@@ -3202,21 +3211,30 @@ else if ($id > 0 || ! empty($ref))
 		if (($object->statut == 2 || $object->statut == 3) && $object->close_code == 'discount_vat') {
 			print '<tr><td colspan="' . $nbcols . '" align="right" class="nowrap">';
 			print $form->textwithpicto($langs->trans("Discount") . ':', $langs->trans("HelpEscompte"), - 1);
-			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td><td>&nbsp;</td></tr>';
+			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td>';
+			if($conf->multidevises->enabled)
+				print '<td align="right">' . price(round(($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye)*$object->rate,2)) . '</td>';
+			print'<td>&nbsp;</td></tr>';
 			$resteapayeraffiche = 0;
 		}
 		// Paye partiellement ou Abandon 'badcustomer'
 		if (($object->statut == 2 || $object->statut == 3) && $object->close_code == 'badcustomer') {
 			print '<tr><td colspan="' . $nbcols . '" align="right" class="nowrap">';
 			print $form->textwithpicto($langs->trans("Abandoned") . ':', $langs->trans("HelpAbandonBadCustomer"), - 1);
-			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td><td>&nbsp;</td></tr>';
+			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td>';
+			if($conf->multidevises->enabled)
+				print '<td align="right">' . price(round($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye)*$object->rate,2) . '</td>';
+			print'<td>&nbsp;</td></tr>';
 			// $resteapayeraffiche=0;
 		}
 		// Paye partiellement ou Abandon 'product_returned'
 		if (($object->statut == 2 || $object->statut == 3) && $object->close_code == 'product_returned') {
 			print '<tr><td colspan="' . $nbcols . '" align="right" class="nowrap">';
 			print $form->textwithpicto($langs->trans("ProductReturned") . ':', $langs->trans("HelpAbandonProductReturned"), - 1);
-			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td><td>&nbsp;</td></tr>';
+			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td>';
+			if($conf->multidevises->enabled)
+				print '<td align="right">' . price(round($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye)*$object->rate,2) . '</td>';
+			print'<td>&nbsp;</td></tr>';
 			$resteapayeraffiche = 0;
 		}
 		// Paye partiellement ou Abandon 'abandon'
@@ -3226,12 +3244,19 @@ else if ($id > 0 || ! empty($ref))
 			if ($object->close_note)
 				$text .= '<br><br><b>' . $langs->trans("Reason") . '</b>:' . $object->close_note;
 			print $form->textwithpicto($langs->trans("Abandoned") . ':', $text, - 1);
-			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td><td>&nbsp;</td></tr>';
+			print '</td><td align="right">' . price($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye) . '</td>';
+			if($conf->multidevises->enabled)
+				print '<td align="right">' . price(round($object->total_ttc - $creditnoteamount - $depositamount - $totalpaye)*$object->rate,2) . '</td>';
+			print'<td>&nbsp;</td></tr>';
 			$resteapayeraffiche = 0;
 		}
 
 		// Billed
-		print '<tr><td colspan="' . $nbcols . '" align="right">' . $langs->trans("Billed") . ' :</td><td align="right" style="border: 1px solid;">' . price($object->total_ttc) . '</td><td>&nbsp;</td></tr>';
+		print '<tr><td colspan="' . $nbcols . '" align="right">' . $langs->trans("Billed") . ' :</td>
+			<td align="right" style="border: 1px solid;">' . price($object->total_ttc) . '</td>';
+		if($conf->multidevises->enabled)
+			print'<td align="right" style="border: 1px solid;">' . price(round($object->total_ttc*$object->rate,2)) . '</td>';
+		print'<td>&nbsp;</td></tr>';
 
 		// Remainder to pay
 		print '<tr><td colspan="' . $nbcols . '" align="right">';
@@ -3241,6 +3266,8 @@ else if ($id > 0 || ! empty($ref))
 			print $langs->trans('ExcessReceived');
 		print ' :</td>';
 		print '<td align="right" style="border: 1px solid;" bgcolor="#f0f0f0"><b>' . price($resteapayeraffiche) . '</b></td>';
+		if($conf->multidevises->enabled)
+			print '<td align="right" style="border: 1px solid;" bgcolor="#f0f0f0"><b>' . price(round($resteapayeraffiche*$object->rate,2)) . '</b></td>';
 		print '<td class="nowrap">&nbsp;</td></tr>';
 	}
 	else 	// Credit note

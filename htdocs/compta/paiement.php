@@ -32,6 +32,7 @@ require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/bank/class/account.class.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 
 $langs->load('companies');
 $langs->load('bills');
@@ -511,8 +512,11 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                 print '<tr class="liste_titre">';
                 print '<td>'.$arraytitle.'</td>';
                 print '<td align="center">'.$langs->trans('Date').'</td>';
-				if ($conf->multidevises->enabled)
+				if ($conf->multidevises->enabled){
 					print '<td align="right">' . $langs->trans('Currency') . '</td>';
+					print '<td align="right">' . $langs->trans('AppliedRate') . '</td>';
+				}
+					
                 print '<td align="right">'.$langs->trans('AmountTTC').'</td>';
 				if ($conf->multidevises->enabled)
 					print '<td align="right">' . $langs->trans('AmountTTC') . ' devisé</td>';
@@ -555,6 +559,11 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 
                     // Date
                     print '<td align="center">'.dol_print_date($db->jdate($objp->df),'day')."</td>\n";
+					
+					if ($conf->multidevises->enabled){
+						print '<td align="center">'.currency_name($invoice->currency)."</td>\n";
+						print '<td align="center">'.round($invoice->rate,4).' %'."</td>\n";
+					}	
 
                     // Price
                     print '<td align="right">'.price($sign * $objp->total_ttc).'</td>';
@@ -575,7 +584,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 							print '+' . price($creditnotes * $invoice->rate);
 						if ($deposits)
 							print '+' . price($deposits * $invoice->rate);
-						print $langs->getCurrencySymbol($invoice->currency) . '</td>';
+						print ' '.$langs->getCurrencySymbol($invoice->currency) . '</td>';
 
 					}
 
@@ -596,16 +605,16 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                     {
 						if(!empty($conf->global->FAC_AUTO_FILLJS))
 							print img_picto("Auto fill",'rightarrow', "class='AutoFillAmout' data-rowname='".$namef."' data-value='".($sign * $remaintopay)."'");
-                        print '<input type=hidden name="'.$nameRemain.'" value="'.$remaintopay.'">';
-                        print '<input type="text" size="8" name="'.$namef.'" value="'.$_POST[$namef].'">';
+                        print '<input type=hidden name="'.$nameRemain.'" id="'.$nameRemain.'" value="'.$remaintopay.'">';
+                        print '<input type="text" size="8" name="'.$namef.'" id="'.$namef.'" value="'.$_POST[$namef].'">';
 						if ($conf->multidevises->enabled)
 							print '<span title="Calcul du montant dans votre devise avec le taux du jour. En vert si vous êtes gagnant sur le change." 
 							style="color:' . ($currency->current_rate < $invoice->rate ? 'orange' : 'darkgreen') . '" id="' . $namef . '_newcurr"></span>';
                     }
                     else
                     {
-                        print '<input type="text" size="8" name="'.$namef.'_disabled" value="'.$_POST[$namef].'" disabled>';
-                        print '<input type="hidden" name="'.$namef.'" value="'.$_POST[$namef].'">';
+                        print '<input type="text" size="8" name="'.$namef.'_disabled" id="'.$namef.'_disabled" value="'.$_POST[$namef].'" disabled>';
+                        print '<input type="hidden" name="'.$namef.'" id="'.$namef.'" value="'.$_POST[$namef].'">';
                     }
                     print "</td>";
 					
@@ -624,21 +633,21 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
 						if ($action != 'add_paiement') {
 							if (!empty($conf->global->FAC_AUTO_FILLJS))
 								print img_picto("Auto fill", 'rightarrow', "class='AutoFillAmout' data-rowname='" . $namef . "' data-value='" . ($sign * $remaintopay) . "'");
-							print '<input type=hidden name="curr_' . $nameRemain . '" value="' . round($remaintopay * $invoice->rate, 2) . '">';
-							print '<input type="text" size="8" name="curr_' . $namef . '" id="curr_' . $namef . '" value="' . round($_POST[$namef] * $invoice->rate, 2) . '">';
+							print '<input type=hidden name="currency_' . $nameRemain . '" id="currency_' . $nameRemain . '"  value="' . round($remaintopay * $invoice->rate, 2) . '">';
+							print '<input type="text" size="8" name="currency_' . $namef . '" id="currency_' . $namef . '" value="' . round($_POST[$namef] * $invoice->rate, 2) . '">';
 
 						} else {
-							print '<input type="text" size="8" name="curr_' . $namef . '_disabled" value="' . round($_POST[$namef] * $invoice->rate, 2) . '" disabled>';
-							print '<input type="hidden" name="curr_' . $nameRemain . '_disabled" id="curr_' . $nameRemain . '_disabled" value="' . round($remaintopay * $invoice->rate, 2) . '">';
+							print '<input type="text" size="8" name="currency_' . $namef . '_disabled" id="currency_' . $namef . '_disabled" value="' . round($_POST[$namef] * $invoice->rate, 2) . '" disabled>';
+							print '<input type="hidden" name="currency_' . $nameRemain . '_disabled" id="currency_' . $nameRemain . '_disabled" value="' . round($remaintopay * $invoice->rate, 2) . '">';
 						}
 						print '<script>
 							$("#' . $namef . '").on("keyup",function(){
-								$("#curr_' . $namef . '").val(Math.round(100*$("#' . $namef . '").val()*' . $invoice->rate . ')/100);
-								$("#' . $namef . '_newcurr").text(Math.round(100*$("#' . $namef . '_curr").val()/' . $currency->current_rate . ')/100);
+								$("#currency_' . $namef . '").val(Math.round(100*$("#' . $namef . '").val()*' . $invoice->rate . ')/100);
+								$("#' . $namef . '_newcurr").text(Math.round(100*$("#' . $namef . '").val()*' . $currency->current_rate . ')/100);
 							});
-							$("#curr_' . $namef . '").on("keyup",function(){
-								$("#' . $namef . '").val(Math.round(100*$("#curr_' . $namef . '").val()/' . $invoice->rate . ')/100);
-								$("#' . $namef . '_newcurr").text(Math.round(100*$("#curr_' . $namef . '").val()/' . $currency->current_rate . ')/100);
+							$("#currency_' . $namef . '").on("keyup",function(){
+								$("#' . $namef . '").val(Math.round(100*$("#currency_' . $namef . '").val()/' . $invoice->rate . ')/100);
+								$("#' . $namef . '_newcurr").text(Math.round(100*$("#currency_' . $namef . '").val()/' . $currency->current_rate . ')/100);
 							});
 							
 							$("#' . $namef . '").on("change",function(){$("#' . $namef . '_newcurr").text(Math.round(100*$("#' . $namef . '").val()*' . $currency->current_rate . ')/100);});
