@@ -114,6 +114,13 @@ class CommandeFournisseur extends CommonOrder
     var $origin_id;
     var $linked_objects=array();
 
+	// Multidevises
+	var $currency;
+	var $rate;
+	var $total_ht_curr;
+	var $total_tva_curr;
+	var $total_ttc_curr;
+
 	/**
      * 	Constructor
      *
@@ -137,6 +144,9 @@ class CommandeFournisseur extends CommonOrder
         $this->statuts[6] = 'StatusOrderCanceled';	// Approved->Canceled
         $this->statuts[7] = 'StatusOrderCanceled';	// Process running->canceled
         $this->statuts[9] = 'StatusOrderRefused';
+		
+		$this->currency=$conf->currency;
+		$this->rate=1;
     }
 
 
@@ -315,6 +325,19 @@ class CommandeFournisseur extends CommonOrder
 
                     $i++;
                 }
+
+				if ($conf->multidevises->enabled) {
+					$sql = "SELECT currency, rate FROM " . MAIN_DB_PREFIX . "document_currency 
+					WHERE element_type='suppliercmd' AND element_id=" . $this->id;
+					$result = $this->db->query($sql);
+					$doccur = $this->db->fetch_object($result);
+					if ($doccur) {
+						$this->currency = $doccur->currency;
+						$this->rate = $doccur->rate;
+						$this->updateTotalHTCurrency();
+					}
+				}
+
                 $this->db->free($result);
 
                 return 1;
@@ -1259,12 +1282,12 @@ class CommandeFournisseur extends CommonOrder
                 $prod = new Product($this->db, $fk_product);
                 if ($prod->fetch($fk_product) > 0)
                 {
-                    $result=$prod->get_buyprice($fk_prod_fourn_price,$qty,$fk_product,$fourn_ref);
+                    $result=$prod->get_buyprice($fk_prod_fourn_price,$qty,$fk_product,$fourn_ref,$this->rate);
                     if ($result > 0)
                     {
                         $label = $prod->libelle;
                         $pu    = $prod->fourn_pu;
-                        $ref   = $prod->ref_fourn;
+						$ref   = $prod->ref_fourn;
                         $product_type = $prod->type;
                     }
                     if ($result == 0 || $result == -1)
@@ -1338,7 +1361,7 @@ class CommandeFournisseur extends CommonOrder
             $sql.= "'".price2num($total_ttc)."',";
 	        $sql.= ($fk_unit ? "'".$this->db->escape($fk_unit)."'":"null");
             $sql.= ")";
-
+			
             dol_syslog(get_class($this)."::addline", LOG_DEBUG);
             $resql=$this->db->query($sql);
             //print $sql;
@@ -1372,7 +1395,6 @@ class CommandeFournisseur extends CommonOrder
                 }
 
                 $this->update_price('','auto');
-
                 $this->db->commit();
                 return 1;
             }
@@ -1940,6 +1962,21 @@ class CommandeFournisseur extends CommonOrder
 
         return 1;
     }
+
+	/*
+	 * Calculating totals according to rate
+	 */
+	private function updateTotalHTCurrency() {
+		$this->total_ht_curr = 0;
+		$this->total_tva_curr = 0;
+		$this->total_ttc_curr = 0;
+		foreach ($this->lines as $line) {
+			$this->total_ht_curr += round($line->total_ht * $this->rate, 2);
+			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
+			$this->total_ttc_curr += round($line->total_ttc * $this->rate, 2);
+		}
+
+	}
 
     /**
      *  Tag order with a particular status

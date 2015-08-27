@@ -37,6 +37,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/modules/supplier_order/modules_commandefou
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/fourn.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
@@ -138,6 +139,21 @@ if (empty($reshook))
 	include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php';		// Must be include, not include_once
 
 	include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';	// Must be include, not include_once
+	
+	//Update currency
+	if ($conf->multidevises->enabled && $_REQUEST['currency']) {
+		$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $_REQUEST['currency'] . "'";
+		$result = $db->query($sql);
+		$line = $db->fetch_object($result);
+		$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+					VALUES ('suppliercmd'," . $object->id . ",'" . $_REQUEST['currency'] . "'," . $line->current_rate . ")";
+		$db->query($sql);
+		$sql = "UPDATE " . MAIN_DB_PREFIX . "document_currency 
+			SET currency='" . $_REQUEST['currency'] . "', rate=" . $line->current_rate . " 
+			WHERE element_type='suppliercmd' AND element_id=" . $object->id;
+		$db->query($sql);
+		header("Location:?id=" . $object->id);
+	}
 
 	if ($action == 'setref_supplier' && $user->rights->fournisseur->commande->creer)
 	{
@@ -256,8 +272,8 @@ if (empty($reshook))
 		else
 		{
 			$idprod=GETPOST('idprod', 'int');
-			$price_ht = '';
-			$tva_tx = '';
+			$price_ht = GETPOST('price_ht');
+			$tva_tx = (GETPOST('tva_tx') ? GETPOST('tva_tx') : 0);
 		}
 
 		$qty = GETPOST('qty'.$predef);
@@ -313,7 +329,7 @@ if (empty($reshook))
 
 	    	if (GETPOST('idprodfournprice') > 0)
 	    	{
-	    		$idprod=$productsupplier->get_buyprice(GETPOST('idprodfournprice'), $qty);    // Just to see if a price exists for the quantity. Not used to found vat.
+	    		$idprod=$productsupplier->get_buyprice(GETPOST('idprodfournprice'), $qty, 0, 0, $object->rate);    // Just to see if a price exists for the quantity. Not used to found vat.
 	    	}
 
 	    	if ($idprod > 0)
@@ -325,7 +341,7 @@ if (empty($reshook))
 	    		$desc = $productsupplier->description;
 	    		if (trim($product_desc) != trim($desc)) $desc = dol_concatdesc($desc, $product_desc);
 
-	    		$tva_tx	= get_default_tva($object->thirdparty, $mysoc, $productsupplier->id, GETPOST('idprodfournprice'));
+	    		$tva_tx	= $tva_tx ? $tva_tx : get_default_tva($object->thirdparty, $mysoc, $productsupplier->id, GETPOST('idprodfournprice'));
 	    		$type = $productsupplier->type;
 
 	    		// Local Taxes
@@ -861,7 +877,6 @@ if (empty($reshook))
 					{
 						$error++;
 					}
-
 				}
 			}
 			else if ($reshook < 0) $error++;
@@ -931,6 +946,22 @@ if (empty($reshook))
 					$object_id = $object->create($user);
 					if ($object_id > 0)
 					{
+						// Multidevises
+						if ($conf->multidevises->enabled) {
+							if (isset($srcobject->currency)) {
+								$object->currency = $srcobject->currency;
+								$object->rate = $srcobject->rate;
+
+								$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+									VALUES ('suppliercmd'," . $object->id . ",'" . $object->currency . "'," . $object->rate . ")";
+								$db->query($sql);
+								$sql = "UPDATE " . MAIN_DB_PREFIX . "document_currency 
+									SET currency='" . $object->currency . "', rate=" . $object->rate . " 
+									WHERE element_type='suppliercmd' AND element_id=" . $object->id;
+								$db->query($sql);
+							}
+						}
+						
 						dol_include_once('/' . $element . '/class/' . $subelement . '.class.php');
 
 						$classname = ucfirst($subelement);
@@ -1037,6 +1068,17 @@ if (empty($reshook))
 		        		$error++;
 			        	setEventMessages($object->error, $object->errors, 'errors');
 		        	}
+					else {
+						//MAJ doc currency
+						if ($conf->multidevises->enabled) {
+							$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $srcobject->currency . "'";
+							$result = $db->query($sql);
+							$line = $db->fetch_object($result);
+							$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+										VALUES ('suppliercmd',$id,'" . $srcobject->currency . "'," . $line->current_rate . ")";
+							$db->query($sql);
+						}
+					}
 				}
 	        }
 
@@ -1518,6 +1560,13 @@ if ($action=='create')
 	print '<tr><td>'.$langs->trans('PaymentMode').'</td><td colspan="2">';
 	$form->select_types_paiements(isset($_POST['mode_reglement_id'])?$_POST['mode_reglement_id']:$mode_reglement_id,'mode_reglement_id');
 	print '</td></tr>';
+	
+	//currency
+	if($conf->multidevises->enabled) {
+		print '<tr><td>' . $langs->trans("Currency") . '</td><td>';
+		print $form->selectCurrency($conf->currency, "currency");
+		print '</td></tr>';
+	}
 
 	// Planned delivery date
 	print '<tr><td>';
@@ -1986,31 +2035,98 @@ elseif (! empty($object->id))
 	$cols = 3;
 	include DOL_DOCUMENT_ROOT . '/core/tpl/extrafields_view.tpl.php';
 
-	// Total
-	print '<tr><td>'.$langs->trans("AmountHT").'</td>';
-	print '<td colspan="2">'.price($object->total_ht,'',$langs,1,-1,-1,$conf->currency).'</td>';
+	if ($conf->multidevises->enabled) {
+
+		print '<tr><td height="10" width="25%">';
+		print '<table width="100%" class="nobordernopadding"><tr><td>';
+		print $langs->trans('Currency');
+		print '<td><td align="right">';
+		if ($action != 'editcurrency')
+			print '<a href="' . DOL_URL_ROOT . '/fourn/commande/card.php?id=' . $object->id . '&action=editcurrency">' . img_edit() . '</a>';
+		else
+			print '&nbsp;';
+		print '</td></tr></table>';
+		print '<td class="nowrap">';
+		if ($action == 'editcurrency') {
+			print $form->selectCurrency($object->currency, "currency");
+			print '<input type="button" value="Modifier" class="button" onclick="location.href=\'?id=' . $object->id . '&currency=\'+$(\'#currency\').val();"/>';
+			//print '<script>$("#currency").on("change",function(){location.href="?id=' . $object -> id . '&currency="+$(this).val();});</script>';
+		} else {
+			print '<strong>' . currency_name($object->currency) . ' (' . $langs->getCurrencySymbol($object->currency) . ')' . '</strong>';
+		}
+		print '</td>';
+		print '<td class="nowrap"><strong>' . currency_name($conf->currency) . ' (' . $langs->getCurrencySymbol($conf->currency) . ')</strong></td>';
+
+		print '</tr>';
+	}
+
+	// Amount HT
+	print '<tr><td height="10" width="25%">' . $langs->trans('AmountHT') . '</td>';
+	if ($conf->multidevises->enabled) {
+		print '<td class="nowrap right">' . price($object->total_ht_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_ht, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_ht, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
+	// Margin Infos
+	if (!empty($conf->margin->enabled)) {
+		print '<td valign="top" width="50%" rowspan="4">';
+		$object->displayMarginInfos();
+		print '</td>';
+	}
 	print '</tr>';
 
-	// Total VAT
-	print '<tr><td>'.$langs->trans("AmountVAT").'</td><td colspan="2">'.price($object->total_tva,'',$langs,1,-1,-1,$conf->currency).'</td>';
+	// Amount VAT
+	print '<tr><td height="10">' . $langs->trans('AmountVAT') . '</td>';
+	if ($conf->multidevises->enabled) {
+
+		print '<td class="nowrap right">' . price($object->total_tva_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_tva, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_tva, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
+	//print '<td class="nowrap" colspan="2">' . price($object -> total_tva, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 	print '</tr>';
 
 	// Amount Local Taxes
-	if ($mysoc->localtax1_assuj=="1" || $object->total_localtax1 != 0) //Localtax1
+	if ($mysoc->localtax1_assuj == "1" || $object->total_localtax1 != 0)// Localtax1
 	{
-		print '<tr><td>'.$langs->transcountry("AmountLT1",$mysoc->country_code).'</td>';
-		print '<td colspan="2">'.price($object->total_localtax1,'',$langs,1,-1,-1,$conf->currency).'</td>';
-		print '</tr>';
+		print '<tr><td height="10">' . $langs->transcountry("AmountLT1", $mysoc->country_code) . '</td>';
+		if ($conf->multidevises->enabled) {
+
+			print '<td class="nowrap right">' . price(round($object->total_localtax1 * $object->rate, 2), '', $langs, 0, -1, -1, $object->currency) . '</td>';
+			print '<td class="nowrap right">' . price($object->total_localtax1, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object->total_localtax1, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax1, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
+		print '<td></td></tr>';
 	}
-	if ($mysoc->localtax2_assuj=="1" || $object->total_localtax2 != 0) //Localtax2
+	if ($mysoc->localtax2_assuj == "1" || $object->total_localtax2 != 0)// Localtax2
 	{
-		print '<tr><td>'.$langs->transcountry("AmountLT2",$mysoc->country_code).'</td>';
-		print '<td colspan="2">'.price($object->total_localtax2,'',$langs,1,-1,-1,$conf->currency).'</td>';
+		print '<tr><td height="10">' . $langs->transcountry("AmountLT2", $mysoc->country_code) . '</td>';
+		if ($conf->multidevises->enabled) {
+
+			print '<td class="nowrap right">' . price(round($object->total_localtax2 * $object->rate, 2), '', $langs, 0, -1, -1, $object->currency) . '</td>';
+			print '<td class="nowrap right">' . price($object->total_localtax2, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		} else {
+			print '<td class="nowrap" colspan="2">' . price($object->total_localtax2, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+		}
+		//print '<td class="nowrap" colspan="2">' . price($object -> total_localtax2, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 		print '</tr>';
 	}
 
-	// Total TTC
-	print '<tr><td>'.$langs->trans("AmountTTC").'</td><td colspan="2">'.price($object->total_ttc,'',$langs,1,-1,-1,$conf->currency).'</td>';
+	// Amount TTC
+	print '<tr><td height="10">' . $langs->trans('AmountTTC') . '</td>';
+	if ($conf->multidevises->enabled) {
+
+		print '<td class="nowrap right">' . price($object->total_ttc_curr, '', $langs, 0, -1, -1, $object->currency) . '</td>';
+		print '<td class="nowrap right">' . price($object->total_ttc, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	} else {
+		print '<td class="nowrap" colspan="2">' . price($object->total_ttc, '', $langs, 0, -1, -1, $conf->currency) . '</td>';
+	}
+	//print '<td class="nowrap" colspan="2">' . price($object -> total_ttc, '', $langs, 0, -1, -1, $conf -> currency) . '</td>';
 	print '</tr>';
 
 	print "</table><br>";

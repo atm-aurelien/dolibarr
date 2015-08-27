@@ -112,6 +112,14 @@ class FactureFournisseur extends CommonInvoice
 	var $libelle_incoterms;  //Used into tooltip
 
     var $extraparams=array();
+	
+	// Multidevises
+	var $currency;
+	var $rate;
+	var $total_ht_curr;
+	var $total_tva_curr;
+	var $total_ttc_curr;
+	
 
     /**
 	 *	Constructor
@@ -133,6 +141,9 @@ class FactureFournisseur extends CommonInvoice
         $this->propalid = 0;
 
         $this->products = array();
+		
+		$this->currency=$conf->currency;
+		$this->rate=1;
     }
 
     /**
@@ -323,7 +334,7 @@ class FactureFournisseur extends CommonInvoice
      */
     function fetch($id='',$ref='')
     {
-        global $langs;
+        global $langs, $conf;
 
         $sql = "SELECT";
         $sql.= " t.rowid,";
@@ -451,6 +462,19 @@ class FactureFournisseur extends CommonInvoice
                 if ($this->statut == self::STATUS_DRAFT) $this->brouillon = 1;
 
                 $result=$this->fetch_lines();
+
+				if ($conf->multidevises->enabled) {
+					$sql = "SELECT currency, rate FROM " . MAIN_DB_PREFIX . "document_currency 
+					WHERE element_type='supplierinvoice' AND element_id=" . $this->id;
+					$result = $this->db->query($sql);
+					$doccur = $this->db->fetch_object($result);
+					if ($doccur) {
+						$this->currency = $doccur->currency;
+						$this->rate = $doccur->rate;
+						$this->updateTotalHTCurrency();
+					}
+				}
+				
                 if ($result < 0)
                 {
                     $this->error=$this->db->lasterror();
@@ -464,6 +488,8 @@ class FactureFournisseur extends CommonInvoice
                 dol_syslog(get_class($this).'::fetch '.$this->error);
                 return 0;
             }
+			
+			
 
             $this->db->free($resql);
             return 1;
@@ -475,7 +501,21 @@ class FactureFournisseur extends CommonInvoice
         }
     }
 
+	/*
+	 * Calculating totals according to rate
+	 */
+	private function updateTotalHTCurrency() {
+		$this->total_ht_curr = 0;
+		$this->total_tva_curr = 0;
+		$this->total_ttc_curr = 0;
+		foreach ($this->lines as $line) {
+			$this->total_ht_curr += round($line->total_ht * $this->rate, 2);
+			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
+			$this->total_ttc_curr += round($line->total_ttc * $this->rate, 2);
+		}
 
+	}
+	
     /**
      *	Load this->lines
      *

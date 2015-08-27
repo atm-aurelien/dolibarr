@@ -63,6 +63,9 @@ class ProductFournisseur extends Product
     var $fourn_tva_npr;
 
     var $fk_supplier_price_expression;
+	
+	//Multidevises
+	var $currency;
 
 
     /**
@@ -192,6 +195,7 @@ class ProductFournisseur extends Product
 
         $this->db->begin();
 
+
         if ($this->product_fourn_price_id)
         {
 	  		$sql = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price";
@@ -208,14 +212,17 @@ class ProductFournisseur extends Product
 			$sql.= " entity = ".$conf->entity.",";
 			$sql.= " info_bits = ".$newnpr.",";
 			$sql.= " charges = ".$charges.",";
+			$sql.= " currency = '".$this->currency."',";
 			$sql.= " delivery_time_days = ".($delivery_time_days != '' ? $delivery_time_days : 'null');
 			$sql.= " WHERE rowid = ".$this->product_fourn_price_id;
 			// TODO Add price_base_type and price_ttc
-
+			
 			dol_syslog(get_class($this).'::update_buyprice', LOG_DEBUG);
 			$resql = $this->db->query($sql);
 			if ($resql)
 			{
+				echo 'ok';
+				
                 // Call trigger
                 $result=$this->call_trigger('SUPPLIER_PRODUCT_BUYPRICE_UPDATE',$user);
                 if ($result < 0) $error++;
@@ -223,21 +230,25 @@ class ProductFournisseur extends Product
 
 				if (empty($error))
 				{
+					echo '-ok';
 					$this->db->commit();
 					return 0;
 				}
 				else
 				{
+					echo '-ko';
 					$this->db->rollback();
 					return 1;
 				}
 			}
 			else
 			{
+				echo 'ko';
 				$this->error=$this->db->error()." sql=".$sql;
 				$this->db->rollback();
 				return -2;
 			}
+			
         }
 
         else
@@ -251,7 +262,7 @@ class ProductFournisseur extends Product
 		  		{
 		            // Add price for this quantity to supplier
 		            $sql = "INSERT INTO ".MAIN_DB_PREFIX."product_fournisseur_price(";
-		            $sql.= "datec, fk_product, fk_soc, ref_fourn, fk_user, price, quantity, remise_percent, remise, unitprice, tva_tx, charges, unitcharges, fk_availability, info_bits, entity, delivery_time_days)";
+		            $sql.= "datec, fk_product, fk_soc, ref_fourn, fk_user, price, quantity, remise_percent, remise, unitprice, tva_tx, charges, unitcharges, fk_availability, info_bits, entity, delivery_time_days, currency)";
 		            $sql.= " values('".$this->db->idate($now)."',";
 		            $sql.= " ".$this->id.",";
 		            $sql.= " ".$fourn->id.",";
@@ -268,7 +279,8 @@ class ProductFournisseur extends Product
 		            $sql.= " ".$availability.",";
 		            $sql.= " ".$newnpr.",";
 		            $sql.= $conf->entity.",";
-		            $sql.= $delivery_time_days;
+		            $sql.= $delivery_time_days.",";
+					$sql.= " '".$this->currency."'";
 		            $sql.=")";
 
 		            dol_syslog(get_class($this)."::update_buyprice", LOG_DEBUG);
@@ -416,7 +428,7 @@ class ProductFournisseur extends Product
 
         $sql = "SELECT s.nom as supplier_name, s.rowid as fourn_id,";
         $sql.= " pfp.rowid as product_fourn_pri_id, pfp.ref_fourn, pfp.fk_product as product_fourn_id, pfp.fk_supplier_price_expression,";
-        $sql.= " pfp.price, pfp.quantity, pfp.unitprice, pfp.remise_percent, pfp.remise, pfp.tva_tx, pfp.fk_availability, pfp.charges, pfp.unitcharges, pfp.info_bits, pfp.delivery_time_days";
+        $sql.= " pfp.price, pfp.quantity, pfp.unitprice, pfp.remise_percent, pfp.remise, pfp.tva_tx, pfp.fk_availability, pfp.charges, pfp.unitcharges, pfp.info_bits, pfp.delivery_time_days, pfp.currency";
         $sql.= " FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp";
         $sql.= ", ".MAIN_DB_PREFIX."societe as s";
         $sql.= " WHERE pfp.entity IN (".getEntity('product', 1).")";
@@ -454,6 +466,7 @@ class ProductFournisseur extends Product
                 $prodfourn->id						= $prodid;
                 $prodfourn->fourn_tva_npr					= $record["info_bits"];
                 $prodfourn->fk_supplier_price_expression    = $record["fk_supplier_price_expression"];
+				$prodfourn->currency						= $record['currency'];
 
                 if (!empty($prodfourn->fk_supplier_price_expression)) {
                     $priceparser = new PriceParser($this->db);

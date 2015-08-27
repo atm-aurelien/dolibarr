@@ -29,6 +29,7 @@ if (! defined('NOREQUIRESOC'))   define('NOREQUIRESOC','1');
 
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 
 $idprod=GETPOST('idprod','int');
 
@@ -51,7 +52,7 @@ if ($idprod > 0)
 
 	$sql = "SELECT p.rowid, p.label, p.ref, p.price, p.duration,";
 	$sql.= " pfp.ref_fourn,";
-	$sql.= " pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.remise_percent, pfp.quantity, pfp.unitprice, pfp.charges, pfp.unitcharges,";
+	$sql.= " pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.remise_percent, pfp.quantity, pfp.unitprice, pfp.charges, pfp.unitcharges,pfp.currency,";
 	$sql.= " pfp.fk_supplier_price_expression, pfp.tva_tx, s.nom as name";
 	$sql.= " FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp";
 	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."product as p ON p.rowid = pfp.fk_product";
@@ -109,15 +110,15 @@ if ($idprod > 0)
 				if ($objp->unitcharges > 0 && ($conf->global->MARGIN_TYPE == "2"))
 				{
 					$title.=" + ";
-					$title.= price($objp->unitcharges,0,$langs,0,0,-1,$conf->currency);
+					$title.= price($objp->unitcharges,0,$langs,0,0,-1,($objp->currency ? $objp->currency : $conf->currency));
 					$price += $objp->unitcharges;
 				}
 				if ($objp->duration) $label .= " - ".$objp->duration;
 
-				$label = price($price,0,$langs,0,0,-1,$conf->currency)."/".$langs->trans("Unit");
-				if ($objp->ref_fourn) $label.=' ('.$objp->ref_fourn.')';
+				$label = price($price,0,$langs,0,0,-1,($objp->currency ? $objp->currency : $conf->currency))."/".$langs->trans("Unit");
+				if ($objp->ref_fourn) $label.=' ('.$objp->ref_fourn.($conf->multidevises->enabled ? ' - '.currency_name($objp->currency) : '') . ')';
 
-				$prices[] = array("id" => $objp->idprodfournprice, "price" => price($price,0,'',0), "label" => $label, "title" => $title);
+				$prices[] = array("id" => $objp->idprodfournprice, "price" => price($price,0,'',0), "label" => $label, "title" => $title, "currency"=>$objp->currency);
 				$i++;
 			}
 
