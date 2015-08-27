@@ -579,7 +579,7 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                     print '</td>';
 					
 					if ($conf->multidevises->enabled) {
-						print '<td align="right">' . price($sign * $paiement * $invoice->rate);
+						print '<td align="right">' . price(round($sign * $paiement * $invoice->rate,2));
 						if ($creditnotes)
 							print '+' . price($creditnotes * $invoice->rate);
 						if ($deposits)
@@ -681,12 +681,24 @@ if ($action == 'create' || $action == 'confirm_paiement' || $action == 'add_paie
                     // Print total
                     print '<tr class="liste_total">';
                     print '<td colspan="2" align="left">'.$langs->trans('TotalTTC').'</td>';
+					if ($conf->multidevises->enabled){
+						print '<td colspan="2">&nbsp;</td>';
+					}
                     print '<td align="right"><b>'.price($sign * $total_ttc).'</b></td>';
+					if ($conf->multidevises->enabled){
+						print '<td>&nbsp;</td>';
+					}
                     print '<td align="right"><b>'.price($sign * $totalrecu);
                     if ($totalrecucreditnote) print '+'.price($totalrecucreditnote);
                     if ($totalrecudeposits) print '+'.price($totalrecudeposits);
                     print '</b></td>';
+					if ($conf->multidevises->enabled){
+						print '<td>&nbsp;</td>';
+					}
                     print '<td align="right"><b>'.price($sign * price2num($total_ttc - $totalrecu - $totalrecucreditnote - $totalrecudeposits,'MT')).'</b></td>';
+					if ($conf->multidevises->enabled){
+						print '<td>&nbsp;</td>';
+					}
                     print '<td align="right" id="result" style="font-weight: bold;"></td>';
                     print '<td align="center">&nbsp;</td>';
                     print "</tr>\n";

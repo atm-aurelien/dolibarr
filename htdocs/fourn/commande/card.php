@@ -917,6 +917,8 @@ if (empty($reshook))
 			$object->date_livraison = $datelivraison;
 			$object->fk_incoterms = GETPOST('incoterm_id', 'int');
 			$object->location_incoterms = GETPOST('location_incoterms', 'alpha');
+			if($conf->multidevises->enabled)
+				$object->currency = GETPOST('currency', 'alpha');
 
 			// Fill array 'array_options' with data from add form
 	       	if (! $error)
@@ -1071,11 +1073,11 @@ if (empty($reshook))
 					else {
 						//MAJ doc currency
 						if ($conf->multidevises->enabled) {
-							$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" . $srcobject->currency . "'";
+							$sql = "SELECT current_rate FROM " . MAIN_DB_PREFIX . "c_currencies WHERE Code_iso='" .GETPOST('currency', 'alpha') . "'";
 							$result = $db->query($sql);
 							$line = $db->fetch_object($result);
 							$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
-										VALUES ('suppliercmd',$id,'" . $srcobject->currency . "'," . $line->current_rate . ")";
+										VALUES ('suppliercmd',$id,'" . GETPOST('currency', 'alpha'). "'," . $line->current_rate . ")";
 							$db->query($sql);
 						}
 					}
@@ -1565,6 +1567,9 @@ if ($action=='create')
 	if($conf->multidevises->enabled) {
 		print '<tr><td>' . $langs->trans("Currency") . '</td><td>';
 		print $form->selectCurrency($conf->currency, "currency");
+		print '<script>$("#socid").on("change",function(){
+				$("#currency").val($("#socid").find("option[value=\""+$("#socid").val()+"\"]").attr("data-currency"))});
+				</script>';
 		print '</td></tr>';
 	}
 

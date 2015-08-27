@@ -1911,6 +1911,7 @@ else
          * List of payments
          */
         $nbrows=9; $nbcols=2;
+		if($conf->multidevises->enabled) $nbrows++;
         if (! empty($conf->projet->enabled)) $nbrows++;
         if (! empty($conf->banque->enabled)) { $nbrows++; $nbcols++; }
 
@@ -1943,6 +1944,8 @@ else
             print '<td>'.$langs->trans('Type').'</td>';
             if (! empty($conf->banque->enabled)) print '<td align="right">'.$langs->trans('BankAccount').'</td>';
             print '<td align="right">'.$langs->trans('Amount').'</td>';
+			if($conf->multidevises->enabled) 
+				print '<td align="right">'.$langs->trans('Amount').' '.$langs->getCurrencySymbol($object->currency).'</td>';
             print '<td width="18">&nbsp;</td>';
             print '</tr>';
 
@@ -1968,6 +1971,8 @@ else
                         print '</td>';
                     }
                     print '<td align="right">'.price($objp->amount).'</td>';
+					if($conf->multidevises->enabled)
+						print '<td align="right">'.price(round($objp->amount*$object->rate,2)).'</td>'; 
                     print '<td align="center">';
                     if ($object->statut == FactureFournisseur::STATUS_VALIDATED && $object->paye == 0 && $user->societe_id == 0)
                     {

@@ -2274,7 +2274,7 @@ if ($action == 'create')
 	// Currency
 	if ($conf->multidevises->enabled) {
 		print '<tr><td>' . $langs->trans('Currency') . '</td><td colspan="2">';
-		print $form->selectCurrency($conf->currency, "currency");
+		print $form->selectCurrency($socid>0 ? $soc->currency : $conf->currency, "currency");
 		print '<script>$("#socid").on("change", function(){var c=$(this).find("option[value=\""+$(this).val()+"\"]").attr("data-currency");$("#currency").val(c)});</script>';
 		print '</td></tr>';
 	}
