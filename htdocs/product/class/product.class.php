@@ -1258,9 +1258,10 @@ class Product extends CommonObject
 	 * 	@param		string	$fourn_ref			Filter on a supplier ref
 	 *  @return    	int 						<-1 if KO, -1 if qty not enough, 0 si ok mais rien trouve, id_product si ok et trouve. May also initialize some properties like (->ref_supplier, buyprice, fourn_pu, vatrate_supplier...)
 	 */
-	function get_buyprice($prodfournprice,$qty,$product_id=0,$fourn_ref=0)
+	function get_buyprice($prodfournprice,$qty,$product_id=0,$fourn_ref=0, $rate=1)
 	{
 		$result = 0;
+		global $conf;
 
 		// We do select by searching with qty and prodfournprice
 		$sql = "SELECT pfp.rowid, pfp.price as price, pfp.quantity as quantity,";
@@ -1271,6 +1272,7 @@ class Product extends CommonObject
 
 		dol_syslog(get_class($this)."::get_buyprice", LOG_DEBUG);
 		$resql = $this->db->query($sql);
+		
 		if ($resql)
 		{
 			$obj = $this->db->fetch_object($resql);
@@ -1284,6 +1286,9 @@ class Product extends CommonObject
                     if ($price_result >= 0) {
                     	$obj->price = $price_result;
                     }
+                }
+                if($conf->multidevises->enabled){
+                	$obj->price= ceil(100*price2num($obj->price)/$rate)/100;
                 }
 				$this->buyprice = $obj->price;                      // deprecated
 				$this->fourn_pu = $obj->price / $obj->quantity;     // Prix unitaire du produit pour le fournisseur $fourn_id
@@ -1319,6 +1324,9 @@ class Product extends CommonObject
 		                    if ($result >= 0) {
 		                    	$obj->price = $price_result;
 		                    }
+		                }
+		                if($conf->multidevises->enabled){
+		                	$obj->price= ceil(100*price2num($obj->price)/$rate)/100;
 		                }
 						$this->buyprice = $obj->price;                      // deprecated
 						$this->fourn_qty = $obj->quantity;					// min quantity for price

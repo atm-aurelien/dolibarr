@@ -29,6 +29,7 @@
 
 require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/product.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_expression.class.php';
@@ -196,10 +197,18 @@ if (empty($reshook))
 				if (isset($_POST['ref_fourn_price_id']))
 					$product->fetch_product_fournisseur_price($_POST['ref_fourn_price_id']);
 
+
+				//Multidevises
+				if($conf->multidevises->enabled) {
+					$product->currency = $_POST ["currency"];
+				}
+				else {
+					$product->currency = $conf->currency;
+				}
+
 				$ret=$product->update_buyprice($quantity, $_POST["price"], $user, $_POST["price_base_type"], $supplier, $_POST["oselDispo"], $ref_fourn, $tva_tx, $_POST["charges"], $remise_percent, 0, $npr, $delivery_time_days);
 				if ($ret < 0)
 				{
-
 					$error++;
 					setEventMessage($product->error, $product->errors, 'errors');
 				}
@@ -446,6 +455,13 @@ if ($id || $ref)
 					</script>';
 				}
 
+				//currency
+				if($conf->multidevises->enabled) {
+					print '<tr><td>' . $langs->trans("Currency") . '</td><td>';
+					print $form->selectCurrency(($object->currency) ? $object->currency : $conf->currency, "currency");
+					print '</td></tr>';
+				}
+
 				// Price qty min
 				print '<tr><td class="fieldrequired">'.$langs->trans("PriceQtyMin").'</td>';
 				print '<td><input class="flat" name="price" size="8" value="'.(GETPOST('price')?price(GETPOST('price')):(isset($product->fourn_price)?price($product->fourn_price):'')).'">';
@@ -529,6 +545,8 @@ if ($id || $ref)
 				print '<tr class="liste_titre">';
 				print_liste_field_titre($langs->trans("Suppliers"),$_SERVER["PHP_SELF"],"s.nom","",$param,"",$sortfield,$sortorder);
 				print_liste_field_titre($langs->trans("SupplierRef"));
+				if($conf->multidevises->enabled)
+					print_liste_field_titre($langs->trans("Currency"));
 				if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"),$_SERVER["PHP_SELF"],"pfp.fk_availability","",$param,"",$sortfield,$sortorder);
 				print_liste_field_titre($langs->trans("QtyMin"),$_SERVER["PHP_SELF"],"pfp.quantity","",$param,'align="right"',$sortfield,$sortorder);
 				print_liste_field_titre($langs->trans("VATRate"));
@@ -561,6 +579,9 @@ if ($id || $ref)
 
 						// Supplier
 						print '<td align="left">'.$productfourn->fourn_ref.'</td>';
+						
+						if($conf->multidevises->enabled)
+							print '<td align="left">'.currency_name($productfourn->currency).'</td>';
 
 						//Availability
 						if(!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
@@ -582,7 +603,7 @@ if ($id || $ref)
 
 						// Price for the quantity
 						print '<td align="right">';
-						print $productfourn->fourn_price?price($productfourn->fourn_price):"";
+						print $productfourn->fourn_price?price($productfourn->fourn_price,0,'',1,-1,-1,$productfourn->currency):"";
 						print '</td>';
 
 						// Charges ????
@@ -591,14 +612,14 @@ if ($id || $ref)
 							if (! empty($conf->margin->enabled))
 							{
 								print '<td align="right">';
-								print $productfourn->fourn_charges?price($productfourn->fourn_charges):"";
+								print $productfourn->fourn_charges?price($productfourn->fourn_charges,0,'',1,-1,-1,$productfourn->currency):"";
 								print '</td>';
 							}
 						}
 
 						// Unit price
 						print '<td align="right">';
-						print price($productfourn->fourn_unitprice);
+						print price($productfourn->fourn_unitprice,0,'',1,-1,-1,$productfourn->currency);
 						//print $objp->unitprice? price($objp->unitprice) : ($objp->quantity?price($objp->price/$objp->quantity):"&nbsp;");
 						print '</td>';
 
