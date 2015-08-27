@@ -318,6 +318,22 @@ if (empty($reshook))
 
 					if ($object_id > 0)
 					{
+						// Multidevises
+						if ($conf->multidevises->enabled) {
+							if (isset($srcobject->currency)) {
+								$object->currency = $srcobject->currency;
+								$object->rate = $srcobject->rate;
+
+								$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
+									VALUES ('command'," . $object->id . ",'" . $object->currency . "'," . $object->rate . ")";
+								$db->query($sql);
+								$sql = "UPDATE " . MAIN_DB_PREFIX . "document_currency 
+									SET currency='" . $object->currency . "', rate=" . $object->rate . " 
+									WHERE element_type='command' AND element_id=" . $object->id;
+								$db->query($sql);
+							}
+						}
+						
 						dol_include_once('/' . $element . '/class/' . $subelement . '.class.php');
 
 						$classname = ucfirst($subelement);
@@ -327,22 +343,6 @@ if (empty($reshook))
 						$result = $srcobject->fetch($object->origin_id);
 						if ($result > 0)
 						{
-							// Multidevises
-							if ($conf->multidevises->enabled) {
-								if (isset($srcobject->currency)) {
-									$object->currency = $srcobject->currency;
-									$object->rate = $srcobject->rate;
-
-									$sql = "INSERT IGNORE INTO " . MAIN_DB_PREFIX . "document_currency (element_type, element_id, currency, rate) 
-										VALUES ('command'," . $object->id . ",'" . $object->currency . "'," . $object->rate . ")";
-									$db->query($sql);
-									$sql = "UPDATE " . MAIN_DB_PREFIX . "document_currency 
-										SET currency='" . $object->currency . "', rate=" . $object->rate . " 
-										WHERE element_type='command' AND element_id=" . $object->id;
-									$db->query($sql);
-								}
-							}
-							
 							$lines = $srcobject->lines;
 							if (empty($lines) && method_exists($srcobject, 'fetch_lines'))
 							{
