@@ -1088,13 +1088,7 @@ else
         if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"),1);
         print '</td></tr>';
 		
-		if($conf->multidevises->enabled) {
-				print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
-	            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
-	            print '</td></tr>';
-			}
-
-        // State
+		// State
         if (empty($conf->global->SOCIETE_DISABLE_STATE))
         {
             print '<tr><td>'.fieldLabel('State','state_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
@@ -1241,6 +1235,12 @@ else
             print '</td>';
             print '</tr>';
         }
+		
+		if($conf->multidevises->enabled) {
+			print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
+            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
+            print '</td></tr>';
+		}
 
         if ($user->rights->societe->client->voir)
         {
@@ -1620,13 +1620,7 @@ else
             if ($user->admin) print info_admin($langs->trans("YouCanChangeValuesForThisListFromDictionarySetup"),1);
             print '</td></tr>';
 			
-			if($conf->multidevises->enabled) {
-				print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
-	            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
-	            print '</td></tr>';
-			}
-
-            // State
+			// State
             if (empty($conf->global->SOCIETE_DISABLE_STATE))
             {
                 print '<tr><td>'.fieldLabel('State','state_id').'</td><td colspan="3">';
@@ -1791,6 +1785,12 @@ else
                 print '</td>';
                 print '</tr>';
             }
+			
+			if($conf->multidevises->enabled) {
+				print '<tr><td>'.fieldLabel('Devise','devise_id').'</td><td colspan="3" class="maxwidthonsmartphone">';
+	            print $form->selectCurrency($object->currency ? $object->currency : $conf->currency,"currency");
+	            print '</td></tr>';
+			}
 
 			// Categories
 		    if (! empty($conf->categorie->enabled)  && ! empty($user->rights->categorie->lire))
@@ -2020,15 +2020,7 @@ else
     	}
         print '</td></tr>';
 		
-		if($conf->multidevises->enabled) {
-			 print '<tr><td width="25%">'.$langs->trans("Devise").'</td><td colspan="'.(2+(($showlogo || $showbarcode)?0:1)).'">';
-	        print currency_name($object->currency ? $object->currency : $conf->currency,1);
-			print ' ('.$langs->getCurrencySymbol($object->currency ? $object->currency : $conf->currency).')';
-	        print '</td>';
-	        print '</tr>';
-		}
-
-        // State
+		// State
         if (empty($conf->global->SOCIETE_DISABLE_STATE)) print '<tr><td>'.$langs->trans('State').'</td><td colspan="'.(2+(($showlogo || $showbarcode)?0:1)).'">'.$object->state.'</td>';
 
         // EMail
@@ -2245,6 +2237,14 @@ else
             print $labellang;
             print '</td></tr>';
         }
+		
+		if($conf->multidevises->enabled) {
+			 print '<tr><td width="25%">'.$langs->trans("Devise").'</td><td colspan="'.(2+(($showlogo || $showbarcode)?0:1)).'">';
+	        print currency_name($object->currency ? $object->currency : $conf->currency,1);
+			print ' ('.$langs->getCurrencySymbol($object->currency ? $object->currency : $conf->currency).')';
+	        print '</td>';
+	        print '</tr>';
+		}
 
 		// Tags / categories
 	    if (! empty($conf->categorie->enabled)  && ! empty($user->rights->categorie->lire))
