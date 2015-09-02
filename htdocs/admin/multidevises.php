@@ -267,7 +267,7 @@ if(isset($_REQUEST['show'])) {
 		</tr>
 		<?php
 		$i=0;
-		$sql="SELECT * FROM " . MAIN_DB_PREFIX . "c_currencies ORDER BY label ASC";
+		$sql="SELECT * FROM " . MAIN_DB_PREFIX . "c_currencies WHERE active=1 ORDER BY label ASC";
 		$resultset=$db->query($sql);
 		if($resultset) {
 			while($row= $db->fetch_object($resultset)) {
