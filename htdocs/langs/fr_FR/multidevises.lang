@@ -1,2 +1,28 @@
 MultiDevisesConfig=Configuration multi-devises
 Multidevises=Multi-devises
+
+#API
+MultiDevisesAPIConf=Configuration de l'API
+MultiDevisesAPIURL=Adresse de l'API
+MultiDevisesAPIGetMode=Codage de l'API
+MultiDevisesAPIBasePath=Chemin de la base monétaire de conversion
+MultiDevisesAPIDatePath=Chemin de la date des taux
+MultiDevisesAPIRatesPath=Chemin des taux
+MultiDevisesSave=Enregistrer
+
+#Général
+MultiDevisesRates=Configuration des taux
+MultiDevisesRatesSave=Historiser les taux
+MultiDevisesRatesSaveNever=Jamais
+MultiDevisesRatesSave1Month=1 mois
+MultiDevisesRatesSave6Month=6 mois
+MultiDevisesRatesSave12Month=1 an
+MultiDevisesRatesSaveFoerever=Infini
+MultiDevisesAllowUpdateRate=Autoriser la mise à jour des taux
+MultiDevisesCalcPrices=Calculer les prix au lieu de les stocker en base
+
+#Listing
+MultiDevisesCurrencies=Libellé des devises
+MultiDevisesISO=Code ISO
+MultiDevisesCurrentRate=Taux courant
+MultiDevisesRatesRefresh=Actualiser les taux (cela effacera les saisies manuelles)

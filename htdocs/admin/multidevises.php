@@ -90,6 +90,11 @@ if(isset($_REQUEST['check'])) {
 	header("Location: ?show");
 }
 
+if(isset($_REQUEST['updateRate'])) {
+ 	$sql = "UPDATE " . MAIN_DB_PREFIX . "c_currencies SET current_rate='" . $_REQUEST['newRate'] . "' WHERE code_iso='".$_REQUEST['updateRate']."'";
+	$db -> query($sql);
+	header("Location: ?show");
+ }
 
 /*
  * View
@@ -139,7 +144,7 @@ dol_fiche_head($head, $tab, $langs->trans("Multidevises"), 0, 'invoice');
 if(isset($_REQUEST['api']) || !$_GET) {
 ?>
 <form method="post">
-	<table class="noborder">
+	<table class="noborder" width="100%">
 		<tr class="liste_titre">
 			<td colspan="2">
 				<?php echo $langs->trans("MultiDevisesAPIConf") ?>
@@ -198,7 +203,7 @@ if(isset($_REQUEST['api']) || !$_GET) {
 if(isset($_REQUEST['main'])) {
 ?>
 <form method="post" id="formMain">
-	<table class="noborder">
+	<table class="noborder" width="100%">
 		<tr class="liste_titre">
 			<td colspan="2">
 				<?php echo $langs->trans("MultiDevisesRates") ?>
@@ -254,7 +259,7 @@ if(isset($_REQUEST['show'])) {
 	?>
 
 <form method="post" id="formMain">
-	<table class="noborder">
+	<table class="noborder" width="100%">
 		<tr class="liste_titre">
 			<td><?php echo $langs->trans("MultiDevisesCurrencies") ?> </td>
 			<td><?php echo $langs->trans("MultiDevisesISO") ?></td>
@@ -278,7 +283,13 @@ if(isset($_REQUEST['show'])) {
 						<?php echo $row->code_iso ?>
 					</td>
 					<td class="right">
-						<?php echo $row->current_rate ?>
+						<span id="show-<?php echo $row->code_iso ?>"><?php echo $row->current_rate ?> <a href="javascript:editRate('<?php echo $row->code_iso ?>')"><?php echo img_edit($langs->trans('Modify')) ?></a></span>
+						<span style="display:none;" id="edit-<?php echo $row->code_iso ?>">
+							<input type="hidden" name="updateRate" value="<?php echo $row->code_iso ?>"/>
+							<input type="text" name="newRate" value="<?php echo $row->current_rate ?>"/>
+							<input type="button" onclick="saveRate('<?php echo $row->code_iso ?>');" value="Modifier"/>
+							<input type="button" onclick="showRate('<?php echo $row->code_iso ?>');" value="Annuler"/>
+						</span>
 					</td>
 				</tr>
 				<?php
@@ -289,6 +300,27 @@ if(isset($_REQUEST['show'])) {
 		?>
 	</table>
 	<input type="button" value="<?php echo $langs->trans("MultiDevisesRatesRefresh") ?>" onclick="location.href='?show&check'"/>
+	<script>
+		function editRate(code) {
+			$("#show-"+code).hide();
+			$("#edit-"+code).show();
+			$("#edit-"+code+' input[name="newRate"]').focus().select();
+		}
+		function showRate(code) {
+			$("#show-"+code).show();
+			$("#edit-"+code).hide();
+		}
+		function saveRate(code) {
+			location.href='?show&updateRate='
+				+$('#edit-'+code+' input[name="updateRate"]').val()
+				+'&newRate='+$('#edit-'+code+' input[name="newRate"]').val();
+		}
+		$('input[name="newRate"]').keypress(function(e) {
+		    if(e.which == 13) {
+		       saveRate($(this).parent().find('input[name="updateRate"]').val());
+		    }
+		});
+	</script>
 </form>
 <?php
 }
