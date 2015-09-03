@@ -336,6 +336,23 @@ abstract class CommonObject
 
     // No constructor as it is an abstract class
 
+    
+    
+    
+	/**
+	 * Calculating rated totals
+	 */
+	function updateTotalHTCurrency() {
+		$this->total_ht_curr = 0;
+		$this->total_tva_curr = 0;
+		$this->total_ttc_curr = 0;
+		foreach ($this->lines as $line) {
+			$this->total_ht_curr += $line->getTotalHTCurrency($this->rate);
+			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
+		}
+		$this->total_ttc_curr = $this->total_ht_curr + $this->total_tva_curr;
+	}
+    
     /**
      * Check an object id/ref exists
      * If you don't need/want to instantiate object and just need to know if object exists, use this method instead of fetch

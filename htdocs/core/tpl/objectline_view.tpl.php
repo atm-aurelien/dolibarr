@@ -194,7 +194,7 @@ if (empty($usemargins)) $usemargins=0;
 	<?php } else { ?>
 	<td align="right" class="nowrap"><?php $coldisplay++; ?><?php echo price($line->total_ht); ?></td>
 	<?php if($conf->multidevises->enabled && $object->currency!=$conf->currency) { ?>
-	<td align="right" class="nowrap"><?php $coldisplay++; ?><?php echo price(round($line->total_ht * $object->rate,2)); ?></td>	
+	<td align="right" class="nowrap"><?php $coldisplay++; ?><?php echo price($line->getTotalHTCurrency($object->rate)); ?></td>	
 	<?php } ?>
 	<?php } ?>
 

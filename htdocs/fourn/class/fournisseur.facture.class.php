@@ -500,21 +500,6 @@ class FactureFournisseur extends CommonInvoice
             return -1;
         }
     }
-
-	/*
-	 * Calculating totals according to rate
-	 */
-	private function updateTotalHTCurrency() {
-		$this->total_ht_curr = 0;
-		$this->total_tva_curr = 0;
-		$this->total_ttc_curr = 0;
-		foreach ($this->lines as $line) {
-			$this->total_ht_curr += round($line->total_ht * $this->rate, 2);
-			$this->total_tva_curr += round($line->total_tva * $this->rate, 2);
-			$this->total_ttc_curr += round($line->total_ttc * $this->rate, 2);
-		}
-
-	}
 	
     /**
      *	Load this->lines

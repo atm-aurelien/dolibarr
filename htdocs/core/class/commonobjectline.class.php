@@ -51,7 +51,19 @@ abstract class CommonObjectLine extends CommonObject
 	 * @var string
 	 */
 	public $fk_unit;
-
+	
+	
+	
+	
+	/**
+	 * Returns converted price line with rate
+	 * 
+	 * @param $rate
+	 * @return converted price
+	 */
+	public function getTotalHTCurrency($rate=1) {
+		return round(round($this->subprice * $rate, 2) * $this->qty * ((100-$this->remise_percent)/100), 2);
+	}
 
     /**
      *	Returns the text label from units dictionnary
