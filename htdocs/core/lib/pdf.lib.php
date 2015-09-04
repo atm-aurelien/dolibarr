@@ -1312,8 +1312,8 @@ function pdf_getlineupexcltax($object,$i,$outputlangs,$hidedetails=0)
 		if (empty($hidedetails) || $hidedetails > 1) {
 			$price = $sign * $object->lines[$i]->subprice;
 			if($conf->multidevises->enabled) {
-				$priceRated=$price * $object->rate;
-				return price(round($priceRated, 2), 0, $outputlangs);
+				$priceRated=$object->lines[$i]->getTotalHTCurrency($object->rate);
+				return price($priceRated, 0, $outputlangs);
 			}
 			else
 				return price($price, 0, $outputlangs);
@@ -1348,7 +1348,7 @@ function pdf_getlineupwithtax($object,$i,$outputlangs,$hidedetails=0)
 		if (empty($hidedetails) || $hidedetails > 1) {
 			$priceAT=($object->lines[$i]->subprice) + ($object->lines[$i]->subprice)*($object->lines[$i]->tva_tx)/100;
 			if($conf->multidevises->enabled)
-				return price(round($priceAT, 2), 0, $outputlangs);
+				return price($object->lines[$i]->getTotalTTCCurrency($object->rate), 0, $outputlangs);
 			else
 				return price($priceAT, 0, $outputlangs);
 		}
@@ -1604,8 +1604,8 @@ function pdf_getlinetotalexcltax($object,$i,$outputlangs,$hidedetails=0)
 			if (empty($hidedetails) || $hidedetails > 1) {
 				$price=$sign * $object->lines[$i]->total_ht;
 				if($conf->multidevises->enabled){
-					$priceRated=$price*$object->rate;
-					return price(round($priceRated, 2), 0, $outputlangs);
+					$priceRated=$object->lines[$i]->getTotalHTCurrency($object->rate);
+					return price($priceRated, 0, $outputlangs);
 				}else
 					return price($price, 0, $outputlangs);;
 			}
@@ -1646,9 +1646,9 @@ function pdf_getlinetotalwithtax($object,$i,$outputlangs,$hidedetails=0)
 			if (empty($hidedetails) || $hidedetails > 1) {
 				$price=($object->lines[$i]->total_ht) + ($object->lines[$i]->total_ht)*($object->lines[$i]->tva_tx)/100;
 				if($conf->multidevises->enabled) 
-					return price(round($pprice * $object->rate, 2), 0, $outputlangs);
+					return price($object->lines[$i]->getTotalTTCCurrency($object->rate), 0, $outputlangs);
 				else
-					return price($pprice, 0, $outputlangs);
+					return price($price, 0, $outputlangs);
 			}
 		}
 	}

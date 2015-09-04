@@ -56,13 +56,23 @@ abstract class CommonObjectLine extends CommonObject
 	
 	
 	/**
-	 * Returns converted price line with rate
+	 * Returns HT converted price line with rate
 	 * 
 	 * @param $rate
 	 * @return converted price
 	 */
 	public function getTotalHTCurrency($rate=1) {
 		return round(round($this->subprice * $rate, 2) * $this->qty * ((100-$this->remise_percent)/100), 2);
+	}
+	
+	/**
+	 * Returns TTC converted price line with rate
+	 * 
+	 * @param $rate
+	 * @return converted price
+	 */
+	public function getTotalTTCCurrency($rate=1) {
+		return round($this->getTotalHTCurrency($rate) * (1+($this->tva_tx/100)), 2);
 	}
 
     /**
